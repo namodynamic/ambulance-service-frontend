@@ -2,12 +2,13 @@ import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Ambulance, Clock, MapPin, Phone, Shield, Users, CheckCircle, Siren } from "lucide-react"
+import Navbar from "@/components/NavBar"
 import Footer from "@/components/Footer"
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen">
-
+      <Navbar />
       <section className="relative py-20 lg:py-32 bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-4xl mx-auto">

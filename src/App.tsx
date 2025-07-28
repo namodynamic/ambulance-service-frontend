@@ -1,9 +1,11 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
 import LandingPage from "./pages/LandingPage"
+import { AuthProvider } from "./contexts/AuthContext"
 
 
 function App() {
   return (
+    <AuthProvider>
     <Router>
       <div className="min-h-screen bg-background">
       <Routes>
@@ -11,6 +13,7 @@ function App() {
       </Routes>
       </div>
     </Router>
+    </AuthProvider>
   )
 }
 
