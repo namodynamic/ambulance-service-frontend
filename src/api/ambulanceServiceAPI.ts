@@ -1,26 +1,21 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+export interface ApiError {
+  error?: string;
+  message?: string;
+  status?: number;
+}
 
-const apiRequest = axios.create({
-  baseURL: BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+export interface AuthResponse {
+  token: string;
+  username: string;
+  role: 'USER' | 'DISPATCHER' | 'ADMIN';
+}
 
-apiRequest.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// 🧾 Interfaces
 export interface LoginCredentials {
-  email: string;
+  username: string;
   password: string;
+  rememberMe?: boolean;
 }
 
 export interface RegisterData {
@@ -28,145 +23,312 @@ export interface RegisterData {
   email: string;
   password: string;
   phoneNumber: string;
+  role?: 'USER' | 'DISPATCHER' | 'ADMIN';
 }
 
 export interface AmbulanceData {
+  id?: number;
   plateNumber: string;
   driverName: string;
   location: string;
-}
-
-export interface AmbulanceResponse extends AmbulanceData {
-  id: number;
   available: boolean;
+  status?: 'AVAILABLE' | 'ON_DUTY' | 'MAINTENANCE';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface RequestData {
+export interface EmergencyRequest {
+  id?: number;
   patientName: string;
   phoneNumber: string;
   location: string;
   reason: string;
+  status: 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  assignedAmbulanceId?: number;
+  assignedAmbulance?: AmbulanceData;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: number;
+  updatedBy?: number;
 }
 
-export interface RequestResponse extends RequestData {
-  id: number;
-  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-  createdAt: string;
+export interface User {
+  id?: number;
+  username: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  role: 'USER' | 'DISPATCHER' | 'ADMIN';
+  enabled?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-// Auth Helpers
-export const isAuthenticated = (): boolean => !!localStorage.getItem('token');
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const API_BASE_URL = `${BASE_URL}/api`;
 
-export const isAdmin = (): boolean => {
-  const user = localStorage.getItem('user');
-  if (!user) return false;
-  return JSON.parse(user).role === 'ADMIN';
-};
+const apiRequest = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true, // Important for cookies/sessions and CORS
+});
+
+apiRequest.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
+
+apiRequest.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Auth API
 export const authAPI = {
   login: async (credentials: LoginCredentials) => {
-    const response = await apiRequest.post('/auth/login', credentials);
-    localStorage.setItem('token', response.data.token);
-    localStorage.setItem('user', JSON.stringify(response.data.user));
+    const response = await apiRequest.post<AuthResponse>('/auth/login', credentials);
+
+    const { token, username, role } = response.data;
+    const storage = credentials.rememberMe ? localStorage : sessionStorage;
+
+    storage.setItem('token', token);
+    storage.setItem('user', JSON.stringify({ username, role }));
+
     return response.data;
   },
 
   register: async (data: RegisterData) => {
-    const response = await apiRequest.post('/auth/register', data);
+    const response = await apiRequest.post<{
+      message: string;
+      user: User;
+    }>('/auth/register', data);
     return response.data;
   },
 
-  logout: () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  logout: async () => {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
+
+      if (token) {
+        try {
+          await apiRequest.post('/auth/logout');
+        } catch (error) {
+          console.error('Error during logout:', error);
+        }
+      }
+    },
+
+  refreshToken: async () => {
+    const response = await apiRequest.post<{ token: string }>('/auth/refresh-token');
+    return response.data.token;
   },
+};
+
+export const getCurrentUser = (): User | null => {
+  const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+  if (!userStr) return null;
+  try {
+    return JSON.parse(userStr);
+  } catch {
+    return null;
+  }
 };
 
 // Ambulance API
 export const ambulanceAPI = {
-  getAll: async (): Promise<AmbulanceResponse[]> => {
-    const res = await apiRequest.get('/ambulances');
-    return res.data;
+  getAll: async (): Promise<AmbulanceData[]> => {
+    const response = await apiRequest.get<AmbulanceData[]>('/api/ambulances');
+    return response.data;
   },
 
-  getAvailable: async (): Promise<AmbulanceResponse[]> => {
-    const res = await apiRequest.get('/ambulances/available');
-    return res.data;
+  getAvailable: async (): Promise<AmbulanceData[]> => {
+    const response = await apiRequest.get<AmbulanceData[]>('/api/ambulances/available');
+    return response.data;
   },
 
-  add: async (data: AmbulanceData): Promise<AmbulanceResponse> => {
-    const res = await apiRequest.post('/ambulances', data);
-    return res.data;
+  getById: async (id: number): Promise<AmbulanceData> => {
+    const response = await apiRequest.get<AmbulanceData>(`/api/ambulances/${id}`);
+    return response.data;
+  },
+
+  create: async (data: Omit<AmbulanceData, 'id'>): Promise<AmbulanceData> => {
+    const response = await apiRequest.post<AmbulanceData>('/api/ambulances', data);
+    return response.data;
+  },
+
+  update: async (id: number, data: Partial<AmbulanceData>): Promise<AmbulanceData> => {
+    const response = await apiRequest.put<AmbulanceData>(`/api/ambulances/${id}`, data);
+    return response.data;
+  },
+
+  updateStatus: async (id: number, status: AmbulanceData['status']) => {
+    const response = await apiRequest.patch(`/api/ambulances/${id}/status`, { status });
+    return response.data;
   },
 
   delete: async (id: number): Promise<void> => {
-    await apiRequest.delete(`/ambulances/${id}`);
+    await apiRequest.delete(`/api/ambulances/${id}`);
   },
 };
 
-// Request API
+// Emergency Request API
 export const requestAPI = {
-  make: async (data: RequestData): Promise<RequestResponse> => {
-    const res = await apiRequest.post('/requests', data);
-    return res.data;
+  create: async (data: Omit<EmergencyRequest, 'id'>): Promise<EmergencyRequest> => {
+    const response = await apiRequest.post<EmergencyRequest>('/api/requests', data);
+    return response.data;
   },
 
-  getMyRequests: async (): Promise<RequestResponse[]> => {
-    const res = await apiRequest.get('/requests/my');
-    return res.data;
+  getAll: async (): Promise<EmergencyRequest[]> => {
+    const response = await apiRequest.get<EmergencyRequest[]>('/api/requests');
+    return response.data;
   },
 
-  trackStatus: async (id: number): Promise<RequestResponse> => {
-    const res = await apiRequest.get(`/requests/${id}`);
-    return res.data;
+  getById: async (id: number): Promise<EmergencyRequest> => {
+    const response = await apiRequest.get<EmergencyRequest>(`/api/requests/${id}`);
+    return response.data;
+  },
+
+  getMyRequests: async (): Promise<EmergencyRequest[]> => {
+    const response = await apiRequest.get<EmergencyRequest[]>('/api/requests/my');
+    return response.data;
+  },
+
+  updateStatus: async (id: number, status: EmergencyRequest['status']): Promise<EmergencyRequest> => {
+    const response = await apiRequest.patch<EmergencyRequest>(
+      `/api/requests/${id}/status`,
+      { status }
+    );
+    return response.data;
+  },
+
+  assignAmbulance: async (requestId: number, ambulanceId: number): Promise<EmergencyRequest> => {
+    const response = await apiRequest.post<EmergencyRequest>(
+      `/api/requests/${requestId}/assign`,
+      { ambulanceId }
+    );
+    return response.data;
+  },
+
+  getRequestHistory: async (requestId: number) => {
+    const response = await apiRequest.get(`/api/requests/${requestId}/history`);
+    return response.data;
   },
 };
 
-// Admin API
-export const adminAPI = {
-  getAllRequests: async (): Promise<RequestResponse[]> => {
-    const res = await apiRequest.get('/admin/requests');
-    return res.data;
-  },
-
-  assignAmbulance: async (requestId: number, ambulanceId: number): Promise<RequestResponse> => {
-    const res = await apiRequest.post(`/admin/requests/${requestId}/assign`, { ambulanceId });
-    return res.data;
-  },
-
-  updateRequestStatus: async (requestId: number, status: RequestResponse['status']) => {
-    const res = await apiRequest.patch(`/admin/requests/${requestId}`, { status });
-    return res.data;
-  },
-};
-
-
+// User Management API
 export const userAPI = {
-  getCurrentUser: async () => {
-    const res = await axios.get("/users/me", {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    })
-    return res.data
+  getAll: async (): Promise<User[]> => {
+    const response = await apiRequest.get<User[]>('/api/users');
+    return response.data;
   },
-}
 
+  getById: async (id: number): Promise<User> => {
+    const response = await apiRequest.get<User>(`/api/users/${id}`);
+    return response.data;
+  },
+
+  create: async (data: Omit<User, 'id'>): Promise<User> => {
+    const response = await apiRequest.post<User>('/api/users', data);
+    return response.data;
+  },
+
+  update: async (id: number, data: Partial<User>): Promise<User> => {
+    const response = await apiRequest.put<User>(`/api/users/${id}`, data);
+    return response.data;
+  },
+
+  updateProfile: async (data: Partial<User>): Promise<User> => {
+    const response = await apiRequest.patch<User>('/api/users/me', data);
+    return response.data;
+  },
+
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    const response = await apiRequest.patch('/api/users/me/password', {
+      currentPassword,
+      newPassword,
+    });
+    return response.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await apiRequest.delete(`/api/users/${id}`);
+  },
+};
+
+// Utility functions
 export const utils = {
-  isAuthenticated: () => !!localStorage.getItem("token"),
-  isAdmin: () => localStorage.getItem("role") === "ADMIN",
-  saveAuthToken: (token: string, remember: boolean) => {
-    if (remember) {
-      localStorage.setItem("token", token)
-    } else {
-      sessionStorage.setItem("token", token)
-    }
+  isAuthenticated(): boolean {
+    return !!localStorage.getItem('authToken') || !!sessionStorage.getItem('authToken');
   },
-  saveUserRole: (role: string, remember: boolean) => {
-    if (remember) {
-      localStorage.setItem("role", role)
-    } else {
-      sessionStorage.setItem("role", role)
-    }
-  },
-}
 
+  isAdmin(): boolean {
+    const user = this.getCurrentUser();
+    return user?.role === 'ADMIN';
+  },
+
+  isDispatcher(): boolean {
+    const user = this.getCurrentUser();
+    return user?.role === 'DISPATCHER';
+  },
+
+  getCurrentUser(): User | null {
+    try {
+      const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+      if (!userStr || userStr === 'undefined' || userStr === 'null') {
+        return null;
+      }
+      const user = JSON.parse(userStr);
+      return user as User;
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('user');
+      return null;
+    }
+  },
+
+  saveAuthToken(token: string, rememberMe = false): void {
+    if (rememberMe) {
+      localStorage.setItem('authToken', token);
+    } else {
+      sessionStorage.setItem('authToken', token);
+    }
+  },
+
+  saveUserRole(role: string, rememberMe = false): void {
+    if (rememberMe) {
+      localStorage.setItem('userRole', role);
+    } else {
+      sessionStorage.setItem('userRole', role);
+    }
+  },
+
+  clearAuth(): void {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    localStorage.removeItem('userRole');
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('userRole');
+  }
+};

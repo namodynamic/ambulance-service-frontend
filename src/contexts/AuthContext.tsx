@@ -1,14 +1,8 @@
 "use client"
 
 import React, { createContext, useState, useEffect } from "react"
-import { authAPI, userAPI, utils } from "@/api/ambulanceServiceAPI"
+import { authAPI, getCurrentUser, utils, type User } from "@/api/ambulanceServiceAPI"
 
-interface User {
-  id: string
-  name: string
-  email: string
-  role: string
-}
 
 interface AuthContextType {
   user: User | null
@@ -19,19 +13,24 @@ interface AuthContextType {
   loading: boolean
 }
 
+type AuthUser = {
+  username: string;
+  role: 'USER' | 'DISPATCHER' | 'ADMIN';
+};
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export { AuthContext }
 
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const initAuth = async () => {
       if (utils.isAuthenticated()) {
         try {
-          const userData = await userAPI.getCurrentUser()
+          const userData = await getCurrentUser()
           setUser(userData)
         } catch (err) {
           console.error("Error fetching current user:", err)
@@ -44,15 +43,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth()
   }, [])
 
-  const login = async (email: string, password: string, rememberMe = false) => {
-    const response = await authAPI.login({ email, password })
+ const login = async (username: string, password: string, rememberMe = false) => {
+  const response = await authAPI.login({ username, password });
+  utils.saveAuthToken(response.token, rememberMe);
+  utils.saveUserRole(response.role, rememberMe);
 
-    utils.saveAuthToken(response.token, rememberMe)
-    utils.saveUserRole(response.role, rememberMe)
-
-    const userData = await userAPI.getCurrentUser()
-    setUser(userData)
-  }
+  const user: AuthUser = {
+  username: response.username,
+  role: response.role,
+};
+if (rememberMe) {
+  localStorage.setItem("user", JSON.stringify(user));
+} else {
+  sessionStorage.setItem("user", JSON.stringify(user));
+}
+setUser(user);
+}
 
   const logout = () => {
     authAPI.logout()
