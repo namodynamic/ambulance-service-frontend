@@ -25,7 +25,6 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useNotification } from "@/hooks/useNotification";
 import { useAuth } from "@/hooks/useAuth";
-import Navbar from "@/components/NavBar";
 import { Ambulance, Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
@@ -73,8 +72,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20">
-      <Navbar />
-
       <div className="container mx-auto px-4 py-16 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">

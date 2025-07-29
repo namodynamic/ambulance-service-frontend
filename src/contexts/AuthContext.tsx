@@ -60,10 +60,17 @@ if (rememberMe) {
 setUser(user);
 }
 
-  const logout = () => {
-    authAPI.logout()
-    setUser(null)
-  }
+ const logout = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('userRole');
+  sessionStorage.removeItem('token');
+  sessionStorage.removeItem('user');
+  sessionStorage.removeItem('authToken');
+  sessionStorage.removeItem('userRole');
+  setUser(null);
+};
 
   const value: AuthContextType = {
     user,
