@@ -1,14 +1,16 @@
 "use client"
 
 import React, { createContext, useState, useEffect } from "react"
-import { authAPI, getCurrentUser, utils, type User } from "@/api/ambulanceServiceAPI"
+import { authAPI, getCurrentUser, utils, type RegisterData, type User } from "@/api/ambulanceServiceAPI"
 
 
 interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
   isAdmin: boolean
+  isDispatcher: boolean
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>
+  register: (data: RegisterData) => Promise<void>
   logout: () => void
   loading: boolean
 }
@@ -60,6 +62,10 @@ if (rememberMe) {
 setUser(user);
 }
 
+const register = async (data: RegisterData) => {
+  await authAPI.register(data)
+}
+
  const logout = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
@@ -76,7 +82,9 @@ setUser(user);
     user,
     isAuthenticated: !!user,
     isAdmin: utils.isAdmin(),
+    isDispatcher: user?.role === "DISPATCHER",
     login,
+    register,
     logout,
     loading,
   }

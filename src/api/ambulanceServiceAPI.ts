@@ -170,27 +170,27 @@ export const getCurrentUser = (): User | null => {
 // Ambulance API
 export const ambulanceAPI = {
   getAll: async (): Promise<AmbulanceData[]> => {
-    const response = await apiRequest.get<AmbulanceData[]>("/api/ambulances");
+    const response = await apiRequest.get<AmbulanceData[]>("/ambulances");
     return response.data;
   },
 
   getAvailable: async (): Promise<AmbulanceData[]> => {
     const response = await apiRequest.get<AmbulanceData[]>(
-      "/api/ambulances/available"
+      "/ambulances/available"
     );
     return response.data;
   },
 
   getById: async (id: number): Promise<AmbulanceData> => {
     const response = await apiRequest.get<AmbulanceData>(
-      `/api/ambulances/${id}`
+      `/ambulances/${id}`
     );
     return response.data;
   },
 
   create: async (data: Omit<AmbulanceData, "id">): Promise<AmbulanceData> => {
     const response = await apiRequest.post<AmbulanceData>(
-      "/api/ambulances",
+      "/ambulances",
       data
     );
     return response.data;
@@ -201,21 +201,21 @@ export const ambulanceAPI = {
     data: Partial<AmbulanceData>
   ): Promise<AmbulanceData> => {
     const response = await apiRequest.put<AmbulanceData>(
-      `/api/ambulances/${id}`,
+      `/ambulances/${id}`,
       data
     );
     return response.data;
   },
 
   updateStatus: async (id: number, status: AmbulanceData["status"]) => {
-    const response = await apiRequest.patch(`/api/ambulances/${id}/status`, {
+    const response = await apiRequest.patch(`/ambulances/${id}/status`, {
       status,
     });
     return response.data;
   },
 
   delete: async (id: number): Promise<void> => {
-    await apiRequest.delete(`/api/ambulances/${id}`);
+    await apiRequest.delete(`/ambulances/${id}`);
   },
 };
 
@@ -225,27 +225,27 @@ export const requestAPI = {
     data: Omit<EmergencyRequest, "id">
   ): Promise<EmergencyRequest> => {
     const response = await apiRequest.post<EmergencyRequest>(
-      "/api/requests",
+      "/requests",
       data
     );
     return response.data;
   },
 
   getAll: async (): Promise<EmergencyRequest[]> => {
-    const response = await apiRequest.get<EmergencyRequest[]>("/api/requests");
+    const response = await apiRequest.get<EmergencyRequest[]>("/requests");
     return response.data;
   },
 
   getById: async (id: number): Promise<EmergencyRequest> => {
     const response = await apiRequest.get<EmergencyRequest>(
-      `/api/requests/${id}`
+      `/requests/${id}`
     );
     return response.data;
   },
 
   getMyRequests: async (): Promise<EmergencyRequest[]> => {
     const response = await apiRequest.get<EmergencyRequest[]>(
-      "/api/requests/my"
+      "/requests/my"
     );
     return response.data;
   },
@@ -255,7 +255,7 @@ export const requestAPI = {
     status: EmergencyRequest["status"]
   ): Promise<EmergencyRequest> => {
     const response = await apiRequest.patch<EmergencyRequest>(
-      `/api/requests/${id}/status`,
+      `/requests/${id}/status`,
       { status }
     );
     return response.data;
@@ -266,14 +266,14 @@ export const requestAPI = {
     ambulanceId: number
   ): Promise<EmergencyRequest> => {
     const response = await apiRequest.post<EmergencyRequest>(
-      `/api/requests/${requestId}/assign`,
+      `/requests/${requestId}/assign`,
       { ambulanceId }
     );
     return response.data;
   },
 
   getRequestHistory: async (requestId: number) => {
-    const response = await apiRequest.get(`/api/requests/${requestId}/history`);
+    const response = await apiRequest.get(`/requests/${requestId}/history`);
     return response.data;
   },
 };
@@ -281,32 +281,32 @@ export const requestAPI = {
 // User Management API
 export const userAPI = {
   getAll: async (): Promise<User[]> => {
-    const response = await apiRequest.get<User[]>("/api/users");
+    const response = await apiRequest.get<User[]>("/users");
     return response.data;
   },
 
   getById: async (id: number): Promise<User> => {
-    const response = await apiRequest.get<User>(`/api/users/${id}`);
+    const response = await apiRequest.get<User>(`/users/${id}`);
     return response.data;
   },
 
   create: async (data: Omit<User, "id">): Promise<User> => {
-    const response = await apiRequest.post<User>("/api/users", data);
+    const response = await apiRequest.post<User>("/users", data);
     return response.data;
   },
 
   update: async (id: number, data: Partial<User>): Promise<User> => {
-    const response = await apiRequest.put<User>(`/api/users/${id}`, data);
+    const response = await apiRequest.put<User>(`/users/${id}`, data);
     return response.data;
   },
 
   updateProfile: async (data: Partial<User>): Promise<User> => {
-    const response = await apiRequest.patch<User>("/api/users/me", data);
+    const response = await apiRequest.patch<User>("/users/me", data);
     return response.data;
   },
 
   changePassword: async (currentPassword: string, newPassword: string) => {
-    const response = await apiRequest.patch("/api/users/me/password", {
+    const response = await apiRequest.patch("/users/me/password", {
       currentPassword,
       newPassword,
     });
@@ -314,7 +314,7 @@ export const userAPI = {
   },
 
   delete: async (id: number): Promise<void> => {
-    await apiRequest.delete(`/api/users/${id}`);
+    await apiRequest.delete(`/users/${id}`);
   },
 };
 

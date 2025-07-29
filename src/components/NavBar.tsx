@@ -1,21 +1,47 @@
-"use client"
+"use client";
 
-import { Link, useNavigate } from "react-router-dom"
-import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Ambulance, User, LogOut, History, Plus } from "lucide-react"
-import { useAuth } from "@/hooks/useAuth"
-
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Ambulance,
+  User,
+  LogOut,
+  History,
+  Plus,
+  Shield,
+  Settings,
+} from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { ThemeToggle } from "./ThemeToggle";
 
 const Navbar = () => {
-  const { user, isAuthenticated, logout } = useAuth()
-  const navigate = useNavigate()
+  const { user, isAuthenticated, isAdmin, isDispatcher, logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout()
-    navigate("/")
-  }
+    logout();
+    navigate("/");
+  };
+
+  const getDashboardLink = () => {
+    if (isAdmin || isDispatcher) {
+      return "/admin/dashboard";
+    }
+    return "/dashboard";
+  };
+
+  const getDashboardLabel = () => {
+    if (isAdmin) return "Admin Dashboard";
+    if (isDispatcher) return "Dispatch Center";
+    return "Dashboard";
+  };
 
   return (
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -24,11 +50,12 @@ const Navbar = () => {
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
               <Ambulance className="h-8 w-8 text-red-600" />
-              <span className="font-bold text-xl">RapidCare</span>
+              <span className="font-bold text-xl">RapidResponse</span>
             </Link>
           </div>
 
           <div className="flex items-center space-x-4">
+            <ThemeToggle />
 
             {isAuthenticated && user ? (
               <>
@@ -41,25 +68,47 @@ const Navbar = () => {
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Button
+                      variant="ghost"
+                      className="relative h-8 w-8 rounded-full"
+                    >
                       <Avatar className="h-8 w-8">
-                        <AvatarFallback>{user.username?.charAt(0)?.toUpperCase() || "U"}</AvatarFallback>
+                        <AvatarFallback>
+                          {user.firstName?.charAt(0)?.toUpperCase() ||
+                            user.username?.charAt(0)?.toUpperCase() ||
+                            "U"}
+                        </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end" forceMount>
                     <DropdownMenuItem asChild>
-                      <Link to="/dashboard">
-                        <User className="mr-2 h-4 w-4" />
-                        Dashboard
+                      <Link to={getDashboardLink()}>
+                        {isAdmin || isDispatcher ? (
+                          <Shield className="mr-2 h-4 w-4" />
+                        ) : (
+                          <User className="mr-2 h-4 w-4" />
+                        )}
+                        {getDashboardLabel()}
                       </Link>
                     </DropdownMenuItem>
+
+                    {!isAdmin && !isDispatcher && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/history">
+                          <History className="mr-2 h-4 w-4" />
+                          Request History
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+
                     <DropdownMenuItem asChild>
-                      <Link to="/history">
-                        <History className="mr-2 h-4 w-4" />
-                        Request History
+                      <Link to="/profile">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Profile Settings
                       </Link>
                     </DropdownMenuItem>
+
                     <DropdownMenuItem onClick={handleLogout}>
                       <LogOut className="mr-2 h-4 w-4" />
                       Log out
@@ -69,22 +118,28 @@ const Navbar = () => {
               </>
             ) : (
               <div className="flex items-center space-x-2">
-                <Button variant="ghost" className="bg-red-600 hover:bg-red-700 text-white hover:text-slate-200" asChild>
+                <Button
+                  variant="ghost"
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  asChild
+                >
                   <Link to="/request/new">Emergency</Link>
                 </Button>
-                <Button variant="ghost" asChild>
-                  <Link to="/login">Login</Link>
-                </Button>
-                <Button asChild>
-                  <Link to="/register">Register</Link>
-                </Button>
+                <div className="max-md:hidden">
+                  <Button variant="ghost" asChild>
+                    <Link to="/login">Login</Link>
+                  </Button>
+                  <Button asChild>
+                    <Link to="/register">Register</Link>
+                  </Button>
+                </div>
               </div>
             )}
           </div>
         </div>
       </div>
     </nav>
-  )
-}
+  );
+};
 
-export default Navbar
+export default Navbar;

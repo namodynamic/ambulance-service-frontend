@@ -11,8 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { useNotification } from "@/hooks/useNotification";
 import { Ambulance, Loader2 } from "lucide-react"
-import { authAPI, type RegisterData } from "@/api/ambulanceServiceAPI"
 import { AxiosError } from "axios";
+import { useAuth } from "@/hooks/useAuth"
 
 const registerSchema = z
   .object({
@@ -33,6 +33,7 @@ type RegisterForm = z.infer<typeof registerSchema>
 
 export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false)
+  const { register } = useAuth()
   const { success, error: notifyError } = useNotification();
   const navigate = useNavigate()
 
@@ -52,7 +53,7 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterForm) => {
     setIsLoading(true)
     try {
-      const registerData: RegisterData = {
+      await register({
         username: data.username,
         email: data.email,
         password: data.password,
@@ -60,10 +61,8 @@ export default function RegisterPage() {
         lastName: data.lastName,
         phoneNumber: data.phoneNumber,
         role: "ROLE_USER",
-      };
+      });
      
-      await authAPI.register(registerData);
-
       success("Registration successful!", "Your account has been created. Please sign in.");
       form.reset();
       setTimeout(() => navigate("/login"), 2000);
@@ -102,6 +101,36 @@ export default function RegisterPage() {
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>First Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="First name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Last name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={form.control}
                   name="username"
@@ -109,49 +138,7 @@ export default function RegisterPage() {
                     <FormItem>
                       <FormLabel>Username</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter your username" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>First Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter your first name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Last Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter your last name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="phoneNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
-                      <FormControl>
-                        <Input type="tel" placeholder="Enter your phone number" {...field} />
+                        <Input placeholder="Choose a username" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -166,6 +153,20 @@ export default function RegisterPage() {
                       <FormLabel>Email</FormLabel>
                       <FormControl>
                         <Input type="email" placeholder="Enter your email" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input type="tel" placeholder="Enter your phone number" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

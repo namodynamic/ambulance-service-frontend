@@ -6,9 +6,13 @@ import { Toaster } from "sonner";
 import AdminLoginPage from "./pages/AdminLoginPage";
 import Navbar from "./components/NavBar";
 import RegisterPage from "./pages/RegisterPage";
+import { AdminRoute } from "./components/AdminRoute";
+import AdminDashboard from "./pages/AdminDashboard";
+import { ThemeProvider } from "./components/theme-provider";
 
 function App() {
   return (
+    <ThemeProvider defaultTheme="system" storageKey="ambulance-ui-theme">
     <AuthProvider>
       <Router>
         <div className="min-h-screen bg-background">
@@ -18,11 +22,21 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/admin/login" element={<AdminLoginPage />} />
+
+             <Route
+                path="/admin/dashboard"
+                element={
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
+                }
+              />
           </Routes>
           <Toaster />
         </div>
       </Router>
     </AuthProvider>
+    </ThemeProvider>
   );
 }
 
