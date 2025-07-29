@@ -1,71 +1,5 @@
 import axios, { AxiosError } from "axios";
-
-export interface ApiError {
-  error?: string;
-  message?: string;
-  status?: number;
-}
-
-export interface AuthResponse {
-  token: string;
-  username: string;
-  role: "USER" | "DISPATCHER" | "ADMIN";
-}
-
-export interface LoginCredentials {
-  username: string;
-  password: string;
-  rememberMe?: boolean;
-}
-
-export interface RegisterData {
-  username: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  phoneNumber: string;
-  role?: "ROLE_USER";
-}
-
-export interface AmbulanceData {
-  id?: number;
-  plateNumber: string;
-  driverName: string;
-  location: string;
-  available: boolean;
-  status?: "AVAILABLE" | "ON_DUTY" | "MAINTENANCE";
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface EmergencyRequest {
-  id?: number;
-  patientName: string;
-  phoneNumber: string;
-  location: string;
-  reason: string;
-  status: "PENDING" | "ASSIGNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
-  assignedAmbulanceId?: number;
-  assignedAmbulance?: AmbulanceData;
-  createdAt?: string;
-  updatedAt?: string;
-  createdBy?: number;
-  updatedBy?: number;
-}
-
-export interface User {
-  id?: number;
-  username: string;
-  email?: string;
-  firstName?: string;
-  lastName?: string;
-  phoneNumber?: string;
-  role: "USER" | "DISPATCHER" | "ADMIN";
-  enabled?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
+import type { AmbulanceData, AuthResponse, EmergencyRequest, LoginCredentials, PaginatedResponse, Patient, RegisterData, ServiceHistory, User } from "@/types";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 const API_BASE_URL = `${BASE_URL}/api`;
@@ -220,63 +154,165 @@ export const ambulanceAPI = {
 };
 
 // Emergency Request API
+// export const requestAPI = {
+//   create: async (
+//     data: Omit<EmergencyRequest, "id">
+//   ): Promise<EmergencyRequest> => {
+//     const response = await apiRequest.post<EmergencyRequest>(
+//       "/requests",
+//       data
+//     );
+//     return response.data;
+//   },
+
+//   getAll: async (): Promise<EmergencyRequest[]> => {
+//     const response = await apiRequest.get<EmergencyRequest[]>("/requests");
+//     return response.data;
+//   },
+
+//   getById: async (id: number): Promise<EmergencyRequest> => {
+//     const response = await apiRequest.get<EmergencyRequest>(
+//       `/requests/${id}`
+//     );
+//     return response.data;
+//   },
+
+//   getMyRequests: async (): Promise<EmergencyRequest[]> => {
+//     const response = await apiRequest.get<EmergencyRequest[]>(
+//       "/requests/my"
+//     );
+//     return response.data;
+//   },
+
+//   updateStatus: async (
+//     id: number,
+//     status: EmergencyRequest["status"]
+//   ): Promise<EmergencyRequest> => {
+//     const response = await apiRequest.patch<EmergencyRequest>(
+//       `/requests/${id}/status`,
+//       { status }
+//     );
+//     return response.data;
+//   },
+
+//   assignAmbulance: async (
+//     requestId: number,
+//     ambulanceId: number
+//   ): Promise<EmergencyRequest> => {
+//     const response = await apiRequest.post<EmergencyRequest>(
+//       `/requests/${requestId}/assign`,
+//       { ambulanceId }
+//     );
+//     return response.data;
+//   },
+
+//   getRequestHistory: async (requestId: number) => {
+//     const response = await apiRequest.get(`/requests/${requestId}/history`);
+//     return response.data;
+//   },
+// };
+
+// Ambulance API
+// export const ambulanceAPI = {
+//   getAll: async (): Promise<AmbulanceData[]> => {
+//     const response = await apiRequest.get<AmbulanceData[]>("/ambulances")
+//     return response.data
+//   },
+
+//   create: async (data: {
+//     licensePlate: string
+//     location: string
+//     status?: AmbulanceData["status"]
+//   }): Promise<AmbulanceData> => {
+//     const response = await apiRequest.post<AmbulanceData>("/ambulances", data)
+//     return response.data
+//   },
+
+//   update: async (id: number, data: Partial<AmbulanceData>): Promise<AmbulanceData> => {
+//     const response = await apiRequest.put<AmbulanceData>(`/ambulances/${id}`, data)
+//     return response.data
+//   },
+
+//   delete: async (id: number): Promise<void> => {
+//     await apiRequest.delete(`/ambulances/${id}`)
+//   },
+// }
+
+// Emergency Request API
 export const requestAPI = {
-  create: async (
-    data: Omit<EmergencyRequest, "id">
-  ): Promise<EmergencyRequest> => {
-    const response = await apiRequest.post<EmergencyRequest>(
-      "/requests",
-      data
-    );
-    return response.data;
+  create: async (data: {
+    userName: string
+    patientName: string
+    userContact: string
+    location: string
+    emergencyDescription: string
+    medicalNotes?: string
+  }): Promise<EmergencyRequest> => {
+    const response = await apiRequest.post<EmergencyRequest>("/requests", data)
+    return response.data
   },
 
-  getAll: async (): Promise<EmergencyRequest[]> => {
-    const response = await apiRequest.get<EmergencyRequest[]>("/requests");
-    return response.data;
+  getAll: async (page = 0, size = 10, sort = ["requestTime", "desc"]): Promise<PaginatedResponse<EmergencyRequest>> => {
+    const response = await apiRequest.get<PaginatedResponse<EmergencyRequest>>(
+      `/requests?page=${page}&size=${size}&sort=${sort.join(",")}`,
+    )
+    return response.data
   },
 
   getById: async (id: number): Promise<EmergencyRequest> => {
-    const response = await apiRequest.get<EmergencyRequest>(
-      `/requests/${id}`
-    );
-    return response.data;
+    const response = await apiRequest.get<EmergencyRequest>(`/requests/${id}`)
+    return response.data
   },
 
-  getMyRequests: async (): Promise<EmergencyRequest[]> => {
-    const response = await apiRequest.get<EmergencyRequest[]>(
-      "/requests/my"
-    );
-    return response.data;
+  getStatusHistory: async (id: number) => {
+    const response = await apiRequest.get(`/requests/${id}/status-history`)
+    return response.data
+  },
+}
+
+// Dispatch API
+export const dispatchAPI = {
+  dispatchAmbulance: async (requestId: number) => {
+    const response = await apiRequest.post(`/dispatch/${requestId}`)
+    return response.data
+  },
+}
+
+// Patient API
+export const patientAPI = {
+  getAll: async (): Promise<Patient[]> => {
+    const response = await apiRequest.get<Patient[]>("/patients")
+    return response.data
   },
 
-  updateStatus: async (
-    id: number,
-    status: EmergencyRequest["status"]
-  ): Promise<EmergencyRequest> => {
-    const response = await apiRequest.patch<EmergencyRequest>(
-      `/requests/${id}/status`,
-      { status }
-    );
-    return response.data;
+  create: async (data: {
+    name: string
+    contact: string
+    medicalNotes: string
+  }): Promise<Patient> => {
+    const response = await apiRequest.post<Patient>("/patients", data)
+    return response.data
+  },
+}
+
+// Service History API
+export const serviceHistoryAPI = {
+  getAll: async (): Promise<ServiceHistory[]> => {
+    const response = await apiRequest.get<ServiceHistory[]>("/service-history")
+    return response.data
   },
 
-  assignAmbulance: async (
-    requestId: number,
-    ambulanceId: number
-  ): Promise<EmergencyRequest> => {
-    const response = await apiRequest.post<EmergencyRequest>(
-      `/requests/${requestId}/assign`,
-      { ambulanceId }
-    );
-    return response.data;
+  getByStatus: async (status: string): Promise<ServiceHistory[]> => {
+    const response = await apiRequest.get<ServiceHistory[]>(`/service-history/status/${status}`)
+    return response.data
   },
 
-  getRequestHistory: async (requestId: number) => {
-    const response = await apiRequest.get(`/requests/${requestId}/history`);
-    return response.data;
+  getByDateRange: async (start: string, end: string): Promise<ServiceHistory[]> => {
+    const response = await apiRequest.get<ServiceHistory[]>(`/service-history/date-range?start=${start}&end=${end}`)
+    return response.data
   },
-};
+}
+
 
 // User Management API
 export const userAPI = {

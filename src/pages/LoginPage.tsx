@@ -37,12 +37,10 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, isAdmin, isDispatcher } = useAuth();
   const { success, error: notifyError } = useNotification();
   const navigate = useNavigate();
   const location = useLocation();
-
-  const from = location.state?.from?.pathname || "/dashboard";
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -58,9 +56,19 @@ export default function LoginPage() {
     try {
       await login(data.username, data.password, data.rememberMe);
       success("Login successful", "Welcome back!");
-      navigate(from, { replace: true });
+      // Redirect based on user role
+      const from = location.state?.from?.pathname;
+      if (from) {
+        navigate(from, { replace: true });
+      } else {
+        if (isAdmin || isDispatcher) {
+          navigate("/admin/dashboard", { replace: true });
+        } else {
+          navigate("/dashboard", { replace: true });
+        }
+      }
     } catch (error: unknown) {
-      let message = "Invalid email or password";
+      let message = "Invalid username or password";
       if (error instanceof Error) {
         message = error.message || message;
       }
@@ -87,7 +95,10 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6"
+              >
                 <FormField
                   control={form.control}
                   name="username"
@@ -143,7 +154,11 @@ export default function LoginPage() {
                 />
 
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? <Loader2 className="animate-spin" /> : "Login"}
+                  {isLoading ? (
+                    <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                  ) : (
+                    "Sign In"
+                  )}
                 </Button>
               </form>
             </Form>

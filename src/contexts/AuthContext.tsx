@@ -1,7 +1,8 @@
 "use client"
 
 import React, { createContext, useState, useEffect } from "react"
-import { authAPI, getCurrentUser, utils, type RegisterData, type User } from "@/api/ambulanceServiceAPI"
+import { authAPI, getCurrentUser, utils } from "@/api/ambulanceServiceAPI"
+import type { RegisterData, User } from "@/types"
 
 
 interface AuthContextType {

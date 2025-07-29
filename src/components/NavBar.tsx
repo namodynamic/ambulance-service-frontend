@@ -50,7 +50,7 @@ const Navbar = () => {
           <div className="flex items-center">
             <Link to="/" className="flex items-center space-x-2">
               <Ambulance className="h-8 w-8 text-red-600" />
-              <span className="font-bold text-xl">RapidResponse</span>
+              <span className="font-bold text-xl">RapidCare</span>
             </Link>
           </div>
 
@@ -59,7 +59,12 @@ const Navbar = () => {
 
             {isAuthenticated && user ? (
               <>
-                <Button variant="ghost" size="sm" asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  asChild
+                  className="max-md:hidden"
+                >
                   <Link to="/request/new">
                     <Plus className="h-4 w-4 mr-2" />
                     New Request
@@ -106,6 +111,13 @@ const Navbar = () => {
                       <Link to="/profile">
                         <Settings className="mr-2 h-4 w-4" />
                         Profile Settings
+                      </Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem asChild>
+                      <Link to="/request/new">
+                        <Plus className="h-4 w-4 mr-2" />
+                        New Request
                       </Link>
                     </DropdownMenuItem>
 
