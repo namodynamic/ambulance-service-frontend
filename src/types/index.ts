@@ -95,3 +95,27 @@ export interface RegisterData {
   phoneNumber: string;
   role?: "ROLE_USER";
 }
+
+export interface RequestStatusHistory {
+  id: number;
+  oldStatus: string | null;
+  newStatus: string;
+  notes: string;
+  changedBy: string;
+  createdAt: string;
+}
+
+export interface UserRequestHistory {
+  id: number;
+  deleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+  user: User;
+  userName: string;
+  userContact: string;
+  location: string;
+  emergencyDescription: string;
+  requestTime: string;
+  status: string;
+  statusHistory: RequestStatusHistory[];
+}

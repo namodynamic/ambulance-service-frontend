@@ -1,5 +1,5 @@
 import axios, { AxiosError } from "axios";
-import type { AmbulanceData, AuthResponse, EmergencyRequest, LoginCredentials, PaginatedResponse, Patient, RegisterData, ServiceHistory, User } from "@/types";
+import type { AmbulanceData, AuthResponse, EmergencyRequest, LoginCredentials, PaginatedResponse, Patient, RegisterData, ServiceHistory, User, UserRequestHistory } from "@/types";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 const API_BASE_URL = `${BASE_URL}/api`;
@@ -352,6 +352,11 @@ export const userAPI = {
   delete: async (id: number): Promise<void> => {
     await apiRequest.delete(`/users/${id}`);
   },
+};
+
+export const getUserRequestHistory = async (): Promise<UserRequestHistory[]> => {
+  const response = await apiRequest.get<UserRequestHistory[]>("/requests/user/history");
+  return response.data;
 };
 
 // Utility functions

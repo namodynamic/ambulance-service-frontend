@@ -9,21 +9,23 @@ import RegisterPage from "./pages/RegisterPage";
 import { AdminRoute } from "./components/AdminRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import { ThemeProvider } from "./components/theme-provider";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import UserDashboard from "./pages/UserDashboard";
 
 function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="ambulance-ui-theme">
-    <AuthProvider>
-      <Router>
-        <div className="min-h-screen bg-background">
-          <Navbar />
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/admin/login" element={<AdminLoginPage />} />
+      <AuthProvider>
+        <Router>
+          <div className="min-h-screen mt-16 bg-background">
+            <Navbar />
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/admin/login" element={<AdminLoginPage />} />
 
-             <Route
+              <Route
                 path="/admin/dashboard"
                 element={
                   <AdminRoute>
@@ -31,11 +33,20 @@ function App() {
                   </AdminRoute>
                 }
               />
-          </Routes>
-          <Toaster />
-        </div>
-      </Router>
-    </AuthProvider>
+
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <UserDashboard />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+            <Toaster />
+          </div>
+        </Router>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

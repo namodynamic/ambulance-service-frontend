@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Ambulance, Clock, MapPin, Phone, Shield, Users, CheckCircle, Siren } from "lucide-react"
+import { Clock, MapPin, Phone, Shield, Users, CheckCircle, Siren } from "lucide-react"
 import Footer from "@/components/Footer"
 
 export default function LandingPage() {
@@ -12,7 +12,7 @@ export default function LandingPage() {
           <div className="text-center max-w-4xl mx-auto">
             <div className="flex justify-center mb-6">
               <div className="p-3 bg-red-100 dark:bg-red-900/20 rounded-full">
-                <Ambulance className="h-12 w-12 text-red-600" />
+                <img src="/amb.svg" alt="ambulance" className="h-12 w-12" />
               </div>
             </div>
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
@@ -23,10 +23,10 @@ export default function LandingPage() {
               Fast, reliable ambulance services with real-time tracking and professional medical care. Request emergency
               assistance with just a few clicks.
             </p>
-            <div className="mb-8 flex justify-center ">
+            <div className="mb-8 flex justify-center">
               <Button
                 size="lg"
-                className="bg-red-600 hover:bg-red-700 text-white px-6 md:px-12 py-6 text-xl font-bold rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-200  h-18"
+                className="bg-red-600 hover:bg-red-700 text-white px-6 md:px-12 py-6 text-base md:text-xl font-bold rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-200  h-18"
                 asChild
               >
                 <Link to="/request/new" className="flex items-center justify-center">
@@ -46,7 +46,7 @@ export default function LandingPage() {
       <section className="py-20 bg-background">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose RapidResponse?</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose RapidCare?</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Professional emergency medical services with cutting-edge technology
             </p>
@@ -140,7 +140,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-20 bg-red-600 text-white">
+      <section className="relative py-20 lg:py-32 bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Get Started?</h2>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
@@ -153,8 +153,7 @@ export default function LandingPage() {
             </Button>
             <Button
               size="lg"
-              variant="outline"
-              className="text-white border-white hover:bg-white hover:text-red-600 bg-transparent"
+              className="bg-red-600 hover:bg-red-700 text-white"
               asChild
             >
               <Link to="/login">Sign In</Link>
