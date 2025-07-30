@@ -34,8 +34,6 @@ export default function RequestStatusPage() {
   const [request, setRequest] = useState<EmergencyRequest | null>(null);
   const [loading, setLoading] = useState(true);
 
-  console.log("request", request);
-
   useEffect(() => {
     const fetchRequest = async () => {
       if (!id) return;

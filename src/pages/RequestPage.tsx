@@ -31,6 +31,10 @@ export default function RequestPage() {
   const { success, error: notifyError } = useNotification()
   const navigate = useNavigate()
 
+   const handleCancel = () => {
+    navigate(-1);
+  };
+
   const form = useForm<RequestForm>({
     resolver: zodResolver(requestSchema),
     defaultValues: {
@@ -211,11 +215,11 @@ export default function RequestPage() {
                       type="button"
                       variant="outline"
                       className="flex-1 bg-transparent"
-                      onClick={() => navigate("/")}
+                      onClick={handleCancel}
                     >
                       Cancel
                     </Button>
-                    <Button type="submit" className="flex-1 bg-red-600 hover:bg-red-700" disabled={isLoading}>
+                    <Button type="submit" className="flex-1 text-white bg-red-600 hover:bg-red-700" disabled={isLoading}>
                       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Submit Emergency Request
                     </Button>

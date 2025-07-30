@@ -14,6 +14,7 @@ import UserDashboard from "./pages/UserDashboard";
 import RequestPage from "./pages/RequestPage";
 import RequestSuccessPage from "./pages/RequestSuccessPage";
 import RequestStatusPage from "./pages/RequestStatusPage";
+import RequestHistoryPage from "./pages/RequestHistoryPage";
 
 function App() {
   return (
@@ -45,6 +46,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <UserDashboard />
+                  </ProtectedRoute>
+                }
+              />
+               <Route
+                path="/history"
+                element={
+                  <ProtectedRoute>
+                    <RequestHistoryPage />
                   </ProtectedRoute>
                 }
               />
