@@ -11,6 +11,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import { ThemeProvider } from "./components/theme-provider";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import UserDashboard from "./pages/UserDashboard";
+import RequestPage from "./pages/RequestPage";
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/admin/login" element={<AdminLoginPage />} />
+              <Route path="/request/new" element={<RequestPage />} />
 
               <Route
                 path="/admin/dashboard"
