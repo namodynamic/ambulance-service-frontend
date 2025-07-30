@@ -13,6 +13,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import UserDashboard from "./pages/UserDashboard";
 import RequestPage from "./pages/RequestPage";
 import RequestSuccessPage from "./pages/RequestSuccessPage";
+import RequestStatusPage from "./pages/RequestStatusPage";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/admin/login" element={<AdminLoginPage />} />
               <Route path="/request/new" element={<RequestPage />} />
+              <Route path="/request/:id" element={<RequestStatusPage />} />
               <Route path="/request/success/:id" element={<RequestSuccessPage />} />
 
               <Route

@@ -265,7 +265,7 @@ export const requestAPI = {
   },
 
   getStatusHistory: async (id: number) => {
-    const response = await apiRequest.get(`/requests/${id}/status-history`)
+    const response = await apiRequest.get(`/requests/${id}/history`)
     return response.data
   },
 }

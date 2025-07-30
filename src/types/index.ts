@@ -1,3 +1,25 @@
+export type RequestStatus =
+  | "PENDING"
+  | "DISPATCHED"
+  | "COMPLETED"
+  | "IN_PROGRESS"
+  | "ARRIVED"
+  | "CANCELLED";
+export type Role = "USER" | "DISPATCHER" | "ADMIN";
+export type AmbulanceStatus =
+  | "AVAILABLE"
+  | "DISPATCHED"
+  | "MAINTENANCE"
+  | "OUT_OF_SERVICE"
+  | "UNAVAILABLE"
+  | "ON_DUTY";
+export type ServiceHistoryStatus =
+  | "PENDING"
+  | "IN_PROGRESS"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "ARRIVED";
+
 export interface User {
   id?: number;
   username: string;
@@ -5,67 +27,69 @@ export interface User {
   firstName?: string;
   lastName?: string;
   phoneNumber?: string;
-  role: "USER" | "DISPATCHER" | "ADMIN";
+  role: Role;
   enabled?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
 
 export interface EmergencyRequest {
-  id?: number
-  user?: User | null
-  userName: string
-  patientName: string
-  userContact: string
-  location: string
-  emergencyDescription: string
-  medicalNotes?: string
-  ambulance?: AmbulanceData | null
-  status: "PENDING" | "DISPATCHED" | "COMPLETED" | "IN_PROGRESS" | "ARRIVED" | "CANCELLED"
-  requestTime?: string
-  createdAt?: string
-  updatedAt?: string
+  id?: number;
+  user?: User | null;
+  userName: string;
+  patientName: string;
+  userContact: string;
+  location: string;
+  emergencyDescription: string;
+  medicalNotes?: string;
+  ambulance?: AmbulanceData | null;
+  status: RequestStatus;
+  requestTime?: string;
+  statusHistory: RequestStatusHistory[];
+  createdAt?: string;
+  updatedAt?: string;
+  deleted?: boolean
 }
 
 export interface AmbulanceData {
-  id?: number
-  licensePlate?: string
-  driverName?: string
-  currentLocation?: string
-  location?: string
-  status?: "AVAILABLE" | "DISPATCHED" | "MAINTENANCE" | "OUT_OF_SERVICE" | "UNAVAILABLE" | "ON_DUTY"
-  availability?: "AVAILABLE" | "DISPATCHED" | "MAINTENANCE" | "OUT_OF_SERVICE" | "UNAVAILABLE" | "ON_DUTY"
-  createdAt?: string
-  updatedAt?: string
+  id?: number;
+  licensePlate?: string;
+  driverName?: string;
+  currentLocation?: string;
+  location?: string;
+  status?: AmbulanceStatus;
+  availability?: AmbulanceStatus;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Patient {
-  id?: number
-  name: string
-  contact: string
-  medicalNotes: string
-  createdAt?: string
-  updatedAt?: string
+  id?: number;
+  name: string;
+  contact: string;
+  medicalNotes: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ServiceHistory {
-  id?: number
-  requestId: number
-  ambulanceId: number
-  patientId: number
-  status: "IN_PROGRESS" | "COMPLETED" | "CANCELLED"
-  notes: string
-  arrivalTime?: string
-  completionTime?: string
-  createdAt?: string
+  id?: number;
+  requestId: number;
+  ambulanceId: number;
+  patientId: number;
+  status: ServiceHistoryStatus;
+  notes: string;
+  arrivalTime?: string;
+  completionTime?: string;
+  createdAt?: string;
 }
 
 export interface PaginatedResponse<T> {
-  content: T[]
-  totalElements: number
-  totalPages: number
-  size: number
-  number: number
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
 }
 
 export interface ApiError {
@@ -77,7 +101,7 @@ export interface ApiError {
 export interface AuthResponse {
   token: string;
   username: string;
-  role: "USER" | "DISPATCHER" | "ADMIN";
+  role: Role;
 }
 
 export interface LoginCredentials {
@@ -98,8 +122,8 @@ export interface RegisterData {
 
 export interface RequestStatusHistory {
   id: number;
-  oldStatus: string | null;
-  newStatus: string;
+  oldStatus: RequestStatus;
+  newStatus: RequestStatus;
   notes: string;
   changedBy: string;
   createdAt: string;

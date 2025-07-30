@@ -150,7 +150,7 @@ export default function RequestSuccessPage() {
 
               <div className="border-t pt-6">
                 <p className="text-gray-600 dark:text-gray-400 mb-4 text-lg">
-                  Want to track your request or view history?
+                  Want to track your request or <span className="cursor-pointer underline"><Link to={`/request/${request.id}`}>view history</Link></span>?
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button variant="outline" asChild>
