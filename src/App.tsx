@@ -12,6 +12,7 @@ import { ThemeProvider } from "./components/theme-provider";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import UserDashboard from "./pages/UserDashboard";
 import RequestPage from "./pages/RequestPage";
+import RequestSuccessPage from "./pages/RequestSuccessPage";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/admin/login" element={<AdminLoginPage />} />
               <Route path="/request/new" element={<RequestPage />} />
+              <Route path="/request/success/:id" element={<RequestSuccessPage />} />
 
               <Route
                 path="/admin/dashboard"
