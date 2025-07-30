@@ -15,6 +15,7 @@ import RequestPage from "./pages/RequestPage";
 import RequestSuccessPage from "./pages/RequestSuccessPage";
 import RequestStatusPage from "./pages/RequestStatusPage";
 import RequestHistoryPage from "./pages/RequestHistoryPage";
+import PatientManagementPage from "./pages/PatientManagement";
 
 function App() {
   return (
@@ -37,6 +38,15 @@ function App() {
                 element={
                   <AdminRoute>
                     <AdminDashboard />
+                  </AdminRoute>
+                }
+              />
+
+               <Route
+                path="/admin/patients"
+                element={
+                  <AdminRoute>
+                    <PatientManagementPage />
                   </AdminRoute>
                 }
               />
