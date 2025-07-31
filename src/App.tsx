@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import { AuthProvider } from "./contexts/AuthContext";
 import LoginPage from "./pages/LoginPage";
@@ -16,6 +16,7 @@ import RequestSuccessPage from "./pages/RequestSuccessPage";
 import RequestStatusPage from "./pages/RequestStatusPage";
 import RequestHistoryPage from "./pages/RequestHistoryPage";
 import PatientManagementPage from "./pages/PatientManagement";
+import ServiceHistoryPage from "./pages/ServiceHistoryPage";
 
 function App() {
   return (
@@ -51,6 +52,15 @@ function App() {
                 }
               />
 
+               <Route
+                path="/admin/service-history"
+                element={
+                  <AdminRoute>
+                    <ServiceHistoryPage />
+                  </AdminRoute>
+                }
+              />
+
               <Route
                 path="/dashboard"
                 element={
@@ -67,6 +77,9 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
+               {/* Catch all */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
             <Toaster />
           </div>

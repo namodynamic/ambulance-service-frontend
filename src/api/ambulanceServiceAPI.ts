@@ -10,7 +10,7 @@ const apiRequest = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true, // Important for cookies/sessions and CORS
+  withCredentials: true,
 });
 
 apiRequest.interceptors.request.use(
@@ -152,91 +152,6 @@ export const ambulanceAPI = {
     await apiRequest.delete(`/ambulances/${id}`);
   },
 };
-
-// Emergency Request API
-// export const requestAPI = {
-//   create: async (
-//     data: Omit<EmergencyRequest, "id">
-//   ): Promise<EmergencyRequest> => {
-//     const response = await apiRequest.post<EmergencyRequest>(
-//       "/requests",
-//       data
-//     );
-//     return response.data;
-//   },
-
-//   getAll: async (): Promise<EmergencyRequest[]> => {
-//     const response = await apiRequest.get<EmergencyRequest[]>("/requests");
-//     return response.data;
-//   },
-
-//   getById: async (id: number): Promise<EmergencyRequest> => {
-//     const response = await apiRequest.get<EmergencyRequest>(
-//       `/requests/${id}`
-//     );
-//     return response.data;
-//   },
-
-//   getMyRequests: async (): Promise<EmergencyRequest[]> => {
-//     const response = await apiRequest.get<EmergencyRequest[]>(
-//       "/requests/my"
-//     );
-//     return response.data;
-//   },
-
-//   updateStatus: async (
-//     id: number,
-//     status: EmergencyRequest["status"]
-//   ): Promise<EmergencyRequest> => {
-//     const response = await apiRequest.patch<EmergencyRequest>(
-//       `/requests/${id}/status`,
-//       { status }
-//     );
-//     return response.data;
-//   },
-
-//   assignAmbulance: async (
-//     requestId: number,
-//     ambulanceId: number
-//   ): Promise<EmergencyRequest> => {
-//     const response = await apiRequest.post<EmergencyRequest>(
-//       `/requests/${requestId}/assign`,
-//       { ambulanceId }
-//     );
-//     return response.data;
-//   },
-
-//   getRequestHistory: async (requestId: number) => {
-//     const response = await apiRequest.get(`/requests/${requestId}/history`);
-//     return response.data;
-//   },
-// };
-
-// Ambulance API
-// export const ambulanceAPI = {
-//   getAll: async (): Promise<AmbulanceData[]> => {
-//     const response = await apiRequest.get<AmbulanceData[]>("/ambulances")
-//     return response.data
-//   },
-
-//   create: async (data: {
-//     licensePlate: string
-//     location: string
-//     status?: AmbulanceData["status"]
-//   }): Promise<AmbulanceData> => {
-//     const response = await apiRequest.post<AmbulanceData>("/ambulances", data)
-//     return response.data
-//   },
-
-//   update: async (id: number, data: Partial<AmbulanceData>): Promise<AmbulanceData> => {
-//     const response = await apiRequest.put<AmbulanceData>(`/ambulances/${id}`, data)
-//     return response.data
-//   },
-
-//   delete: async (id: number): Promise<void> => {
-//     await apiRequest.delete(`/ambulances/${id}`)
-//   },
-// }
 
 // Emergency Request API
 export const requestAPI = {
