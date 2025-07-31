@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -51,6 +51,7 @@ import {
   UserCheck,
   Settings,
 } from "lucide-react";
+import { PaginationControls } from "@/components/PaginationControls";
 import {
   ambulanceAPI,
   requestAPI,
@@ -110,9 +111,6 @@ export default function AdminDashboard() {
   const [editingAmbulance, setEditingAmbulance] =
     useState<AmbulanceData | null>(null);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
-
-  const [currentPage, setCurrentPage] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [serviceHistory, setServiceHistory] = useState<ServiceHistory[]>([]);
 
@@ -120,14 +118,33 @@ export default function AdminDashboard() {
   const [requestFilter, setRequestFilter] = useState("all");
   const [requestSearch, setRequestSearch] = useState("");
   const [serviceFilter, setServiceFilter] = useState("all");
+  const [userSearch, setUserSearch] = useState("");
+  const [patientSearch, setPatientSearch] = useState("");
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pendingCurrentPage, setPendingCurrentPage] = useState(1);
+  const [usersCurrentPage, setUsersCurrentPage] = useState(1);
+  const [patientsCurrentPage, setPatientsCurrentPage] = useState(1);
+  const [serviceHistoryCurrentPage, setServiceHistoryCurrentPage] = useState(1);
+  const itemsPerPage = 9;
 
   useEffect(() => {
-    fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 30000);
-    return () => clearInterval(interval);
-  }, []);
+    setUsersCurrentPage(1);
+  }, [userSearch]);
 
-  const fetchDashboardData = async () => {
+  useEffect(() => {
+    setServiceHistoryCurrentPage(1);
+  }, [serviceFilter]);
+
+  useEffect(() => {
+    setPatientsCurrentPage(1);
+  }, [patientSearch]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [requestFilter, requestSearch]);
+
+  const fetchDashboardData = useCallback(async () => {
     try {
       const [
         requestsData,
@@ -170,7 +187,6 @@ export default function AdminDashboard() {
       setUsers(usersData);
       setPatients(patientsData);
       setServiceHistory(historyData);
-      // setTotalPages(requestsData.totalPages || 1);
     } catch (error: unknown) {
       let message = "Error loading dashboard";
       if (error instanceof Error) {
@@ -180,7 +196,13 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchDashboardData();
+    const interval = setInterval(fetchDashboardData, 30000);
+    return () => clearInterval(interval);
+  }, [fetchDashboardData]);
 
   const mappedAmbulances = ambulances.map((a) => ({
     id: a.id,
@@ -384,6 +406,112 @@ export default function AdminDashboard() {
     }
   };
 
+  const filteredRequests = useMemo(
+    () =>
+      allRequests.filter((request) => {
+        const matchesFilter =
+          requestFilter === "all" ||
+          request.status.toLowerCase() === requestFilter.toLowerCase();
+        const matchesSearch =
+          requestSearch === "" ||
+          String(request.id).includes(requestSearch) ||
+          (request.location || "")
+            .toLowerCase()
+            .includes(requestSearch.toLowerCase()) ||
+          (request.userName || "")
+            .toLowerCase()
+            .includes(requestSearch.toLowerCase()) ||
+          (request.patientName || "")
+            .toLowerCase()
+            .includes(requestSearch.toLowerCase());
+        return matchesFilter && matchesSearch;
+      }),
+    [allRequests, requestFilter, requestSearch]
+  );
+
+  const filteredServiceHistory = useMemo(
+    () =>
+      serviceHistory.filter((service) => {
+        return (
+          serviceFilter === "all" ||
+          service.status.toLowerCase() === serviceFilter.toLowerCase()
+        );
+      }),
+    [serviceHistory, serviceFilter]
+  );
+
+  const totalPages = useMemo(
+    () => Math.ceil(filteredRequests.length / itemsPerPage),
+    [filteredRequests.length, itemsPerPage]
+  );
+
+  const paginatedRequests = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredRequests.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredRequests, currentPage, itemsPerPage]);
+
+  const pendingTotalPages = useMemo(
+    () => Math.ceil(pendingRequests.length / itemsPerPage),
+    [pendingRequests.length, itemsPerPage]
+  );
+
+  const paginatedPendingRequests = useMemo(() => {
+    const startIndex = (pendingCurrentPage - 1) * itemsPerPage;
+    return pendingRequests.slice(startIndex, startIndex + itemsPerPage);
+  }, [pendingRequests, pendingCurrentPage, itemsPerPage]);
+
+  const filteredUsers = useMemo(() => {
+    if (!userSearch) return users;
+    const lowercasedSearch = userSearch.toLowerCase();
+    return users.filter(
+      (user) =>
+        (user.firstName || "").toLowerCase().includes(lowercasedSearch) ||
+        (user.lastName || "").toLowerCase().includes(lowercasedSearch) ||
+        (user.username || "").toLowerCase().includes(lowercasedSearch) ||
+        (user.email || "").toLowerCase().includes(lowercasedSearch)
+    );
+  }, [users, userSearch]);
+
+  const usersTotalPages = useMemo(
+    () => Math.ceil(filteredUsers.length / itemsPerPage),
+    [filteredUsers.length, itemsPerPage]
+  );
+
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (usersCurrentPage - 1) * itemsPerPage;
+    return filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+  }, [usersCurrentPage, itemsPerPage, filteredUsers]);
+
+  const filteredPatients = useMemo(() => {
+    if (!patientSearch) return patients;
+    const lowercasedSearch = patientSearch.toLowerCase();
+    return patients.filter(
+      (patient) =>
+        (patient.name || "").toLowerCase().includes(lowercasedSearch) ||
+        (patient.contact || "").toLowerCase().includes(lowercasedSearch)
+    );
+  }, [patients, patientSearch]);
+
+  const patientsTotalPages = useMemo(
+    () => Math.ceil(filteredPatients.length / itemsPerPage),
+    [filteredPatients.length, itemsPerPage]
+  );
+
+  const paginatedPatients = useMemo(() => {
+    const startIndex = (patientsCurrentPage - 1) * itemsPerPage;
+    return filteredPatients.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredPatients, patientsCurrentPage, itemsPerPage]);
+
+  const serviceHistoryTotalPages = useMemo(
+    () => Math.ceil(filteredServiceHistory.length / itemsPerPage),
+    [filteredServiceHistory.length, itemsPerPage]
+  );
+
+  const paginatedServiceHistory = useMemo(() => {
+    const startIndex = (serviceHistoryCurrentPage - 1) * itemsPerPage;
+    return filteredServiceHistory.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredServiceHistory, serviceHistoryCurrentPage, itemsPerPage]);
+
   if (loading) {
     return (
       <div className="min-h-screen">
@@ -393,25 +521,6 @@ export default function AdminDashboard() {
       </div>
     );
   }
-
-  const filteredRequests = allRequests.filter((request) => {
-    const matchesFilter =
-      requestFilter === "all" ||
-      request.status.toLowerCase() === requestFilter.toLowerCase();
-    const matchesSearch =
-      requestSearch === "" ||
-      request.location.toLowerCase().includes(requestSearch.toLowerCase()) ||
-      request.userName.toLowerCase().includes(requestSearch.toLowerCase()) ||
-      request.patientName.toLowerCase().includes(requestSearch.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
-
-  const filteredServiceHistory = serviceHistory.filter((service) => {
-    return (
-      serviceFilter === "all" ||
-      service.status.toLowerCase() === serviceFilter.toLowerCase()
-    );
-  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -520,7 +629,7 @@ export default function AdminDashboard() {
           />
         </div>
 
-        <Tabs defaultValue="pending" className="space-y-8">
+        <Tabs defaultValue="pending" className="space-y-8 min-h-screen">
           <TabsList className="w-full justify-start overflow-x-auto gap-2 md:grid md:grid-cols-6 mb-6">
             <TabsTrigger value="pending">Pending</TabsTrigger>
             <TabsTrigger value="requests">All Requests</TabsTrigger>
@@ -546,87 +655,100 @@ export default function AdminDashboard() {
                     <p className="text-muted-foreground">No pending requests</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {pendingRequests.map((request) => (
-                      <Card
-                        key={request.id}
-                        className="border-l-4 border-l-orange-500"
-                      >
-                        <CardContent className="pt-6">
-                          <div className="flex items-start max-md:flex-col gap-2 justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center flex-wrap gap-2 mb-2">
-                                <Badge
-                                  className={getStatusColor(request.status)}
-                                >
-                                  {request.status}
-                                </Badge>
-                                <span className="text-sm text-muted-foreground">
-                                  #{String(request.id).padStart(4, "0")}
-                                </span>
-                                <div className="flex items-center text-sm text-muted-foreground">
-                                  <Clock className="h-4 w-4 mr-1" />
-                                  {request.requestTime &&
-                                    new Date(
-                                      request.requestTime
-                                    ).toLocaleString()}
-                                </div>
-                              </div>
-
-                              <div className="space-y-2">
-                                <div className="flex items-start flex-wrap gap-2">
-                                  <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                                  <div>
-                                    <p className="font-medium">
-                                      {request.location}
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">
-                                      {request.emergencyDescription}
-                                    </p>
-                                    {request.medicalNotes && (
-                                      <p className="text-sm text-muted-foreground italic">
-                                        <span className="text-amber-700">
-                                          Medical Note:
-                                        </span>{" "}
-                                        {request.medicalNotes}
-                                      </p>
-                                    )}
+                  <>
+                    <div className="text-sm text-muted-foreground mb-4">
+                      Showing {paginatedPendingRequests.length} of{" "}
+                      {pendingRequests.length} requests
+                    </div>
+                    <div className="space-y-4">
+                      {paginatedPendingRequests.map((request) => (
+                        <Card
+                          key={request.id}
+                          className="border-l-4 border-l-orange-500"
+                        >
+                          <CardContent className="pt-6">
+                            <div className="flex items-start max-md:flex-col gap-2 justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center flex-wrap gap-2 mb-2">
+                                  <Badge
+                                    className={getStatusColor(request.status)}
+                                  >
+                                    {request.status}
+                                  </Badge>
+                                  <span className="text-sm text-muted-foreground">
+                                    #{String(request.id).padStart(4, "0")}
+                                  </span>
+                                  <div className="flex items-center text-sm text-muted-foreground">
+                                    <Clock className="h-4 w-4 mr-1" />
+                                    {request.requestTime &&
+                                      new Date(
+                                        request.requestTime
+                                      ).toLocaleString()}
                                   </div>
                                 </div>
 
-                                <div className="flex items-center flex-wrap gap-2 text-sm text-muted-foreground">
-                                  <Phone className="h-4 w-4" />
-                                  <span>Caller: {request.userName}</span>
-                                  <span>•</span>
-                                  <span>Patient: {request.patientName}</span>
-                                  <span>•</span>
-                                  <span>{request.userContact}</span>
+                                <div className="space-y-2">
+                                  <div className="flex items-start flex-wrap gap-2">
+                                    <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                                    <div>
+                                      <p className="font-medium">
+                                        {request.location}
+                                      </p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {request.emergencyDescription}
+                                      </p>
+                                      {request.medicalNotes && (
+                                        <p className="text-sm text-muted-foreground italic">
+                                          <span className="text-amber-700">
+                                            Medical Note:
+                                          </span>{" "}
+                                          {request.medicalNotes}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center flex-wrap gap-2 text-sm text-muted-foreground">
+                                    <Phone className="h-4 w-4" />
+                                    <span>Caller: {request.userName}</span>
+                                    <span>•</span>
+                                    <span>Patient: {request.patientName}</span>
+                                    <span>•</span>
+                                    <span>{request.userContact}</span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
 
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="sm" asChild>
-                                <Link to={`/request/${request.id}`}>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  View
-                                </Link>
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={() =>
-                                  handleDispatchAmbulance(request.id!)
-                                }
-                                className="bg-red-600 text-white hover:bg-red-700"
-                              >
-                                Dispatch
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button variant="outline" size="sm" asChild>
+                                  <Link to={`/request/${request.id}`}>
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    View
+                                  </Link>
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() =>
+                                    handleDispatchAmbulance(request.id!)
+                                  }
+                                  className="bg-red-600 text-white hover:bg-red-700"
+                                >
+                                  Dispatch
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                    {pendingTotalPages > 0 && (
+                      <PaginationControls
+                        currentPage={pendingCurrentPage}
+                        totalPages={pendingTotalPages}
+                        onPageChange={setPendingCurrentPage}
+                      />
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -674,59 +796,83 @@ export default function AdminDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {filteredRequests.map((request) => (
-                    <Card key={request.id}>
-                      <CardContent className="pt-6">
-                        <div className="flex items-start flex-wrap gap-2 justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Badge className={getStatusColor(request.status)}>
-                                {request.status}
-                              </Badge>
-                              <span className="text-sm text-muted-foreground">
-                                #{String(request.id).padStart(4, "0")}
-                              </span>
-                              <div className="flex items-center text-sm text-muted-foreground">
-                                <Clock className="h-4 w-4 mr-1" />
-                                {request.requestTime &&
-                                  new Date(
-                                    request.requestTime
-                                  ).toLocaleString()}
-                              </div>
-                            </div>
+                {filteredRequests.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">
+                      No requests match your search or filters.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-sm text-muted-foreground">
+                      Showing {paginatedRequests.length} of{" "}
+                      {filteredRequests.length} requests
+                    </div>
+                    <div className="space-y-4 mt-4">
+                      {paginatedRequests.map((request) => (
+                        <Card key={request.id}>
+                          <CardContent className="pt-6">
+                            <div className="flex items-start flex-wrap gap-2 justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Badge
+                                    className={getStatusColor(request.status)}
+                                  >
+                                    {request.status}
+                                  </Badge>
+                                  <span className="text-sm text-muted-foreground">
+                                    #{String(request.id).padStart(4, "0")}
+                                  </span>
+                                  <div className="flex items-center text-sm text-muted-foreground">
+                                    <Clock className="h-4 w-4 mr-1" />
+                                    {request.requestTime &&
+                                      new Date(
+                                        request.requestTime
+                                      ).toLocaleString()}
+                                  </div>
+                                </div>
 
-                            <div className="grid md:grid-cols-2 gap-4">
-                              <div>
-                                <p className="font-medium">
-                                  {request.location}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  {request.emergencyDescription}
-                                </p>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                  <div>
+                                    <p className="font-medium">
+                                      {request.location}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {request.emergencyDescription}
+                                    </p>
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    <p>Caller: {request.userName}</p>
+                                    <p>
+                                      Patient:{" "}
+                                      {request.patientName || request.userName}
+                                    </p>
+                                    <p>Contact: {request.userContact}</p>
+                                  </div>
+                                </div>
                               </div>
-                              <div className="text-sm text-muted-foreground">
-                                <p>Caller: {request.userName}</p>
-                                <p>
-                                  Patient:{" "}
-                                  {request.patientName || request.userName}
-                                </p>
-                                <p>Contact: {request.userContact}</p>
-                              </div>
-                            </div>
-                          </div>
 
-                          <Button variant="outline" size="sm" asChild>
-                            <Link to={`/request/${request.id}`}>
-                              <ExternalLink className="h-4 w-4 mr-1" />
-                              View Details
-                            </Link>
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                              <Button variant="outline" size="sm" asChild>
+                                <Link to={`/request/${request.id}`}>
+                                  <ExternalLink className="h-4 w-4 mr-1" />
+                                  View Details
+                                </Link>
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                    {totalPages > 0 && (
+                      <PaginationControls
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                      />
+                    )}
+                  </>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -989,162 +1135,197 @@ export default function AdminDashboard() {
           <TabsContent value="patients" className="space-y-4">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center flex-wrap gap-5 justify-between">
                   <div>
                     <CardTitle>Patient Management</CardTitle>
                     <CardDescription>
                       Manage patient records and medical information
                     </CardDescription>
                   </div>
-                  <Button asChild>
-                    <Link to="/admin/patients">
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      View All Patients
-                    </Link>
-                  </Button>
+                  <div className="flex items-center flex-wrap gap-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search by name or contact..."
+                        value={patientSearch}
+                        onChange={(e) => setPatientSearch(e.target.value)}
+                        className="pl-10 w-64"
+                      />
+                    </div>
+                    <Button asChild>
+                      <Link to="/admin/patients">
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        View All Patients
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {patients.slice(0, 9).map((patient) => (
-                    <Card key={patient.id}>
-                      <CardContent className="pt-6">
-                        <div className="space-y-3">
-                          <div>
-                            <h3 className="font-semibold text-lg">
-                              {patient.name}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                              {patient.contact}
-                            </p>
-                          </div>
+                {filteredPatients.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">
+                      {patients.length === 0
+                        ? "No patients found."
+                        : "No patients match your search."}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-sm text-muted-foreground mb-4">
+                      Showing {paginatedPatients.length} of{" "}
+                      {filteredPatients.length} patients
+                    </div>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {paginatedPatients.map((patient) => (
+                        <Card key={patient.id}>
+                          <CardContent className="pt-6">
+                            <div className="space-y-3">
+                              <div>
+                                <h3 className="font-semibold text-lg">
+                                  {patient.name}
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                  {patient.contact}
+                                </p>
+                              </div>
 
-                          {patient.medicalNotes && (
-                            <div>
-                              <p className="text-sm text-muted-foreground bg-muted p-2 rounded line-clamp-2">
-                                {patient.medicalNotes}
-                              </p>
-                            </div>
-                          )}
+                              {patient.medicalNotes && (
+                                <div>
+                                  <p className="text-sm text-muted-foreground bg-muted p-2 rounded line-clamp-2">
+                                    {patient.medicalNotes}
+                                  </p>
+                                </div>
+                              )}
 
-                          <div className="flex gap-2 pt-2">
-                            <Dialog>
-                              <DialogTrigger asChild>
+                              <div className="flex gap-2 pt-2">
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setEditingPatient(patient)}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>Edit Patient</DialogTitle>
+                                      <DialogDescription>
+                                        Update patient information
+                                      </DialogDescription>
+                                    </DialogHeader>
+                                    {editingPatient && (
+                                      <div className="space-y-4">
+                                        <div>
+                                          <Label htmlFor="editPatientName">
+                                            Patient Name
+                                          </Label>
+                                          <Input
+                                            id="editPatientName"
+                                            value={editingPatient.name}
+                                            onChange={(e) =>
+                                              setEditingPatient({
+                                                ...editingPatient,
+                                                name: e.target.value,
+                                              })
+                                            }
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label htmlFor="editPatientContact">
+                                            Contact
+                                          </Label>
+                                          <Input
+                                            id="editPatientContact"
+                                            value={editingPatient.contact}
+                                            onChange={(e) =>
+                                              setEditingPatient({
+                                                ...editingPatient,
+                                                contact: e.target.value,
+                                              })
+                                            }
+                                          />
+                                        </div>
+                                        <div>
+                                          <Label htmlFor="editPatientNotes">
+                                            Medical Notes
+                                          </Label>
+                                          <Textarea
+                                            id="editPatientNotes"
+                                            value={editingPatient.medicalNotes}
+                                            onChange={(e) =>
+                                              setEditingPatient({
+                                                ...editingPatient,
+                                                medicalNotes: e.target.value,
+                                              })
+                                            }
+                                            className="min-h-[100px]"
+                                          />
+                                        </div>
+                                        <Button
+                                          onClick={handleUpdatePatient}
+                                          className="w-full"
+                                        >
+                                          Update Patient
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </DialogContent>
+                                </Dialog>
+
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => setEditingPatient(patient)}
+                                  onClick={() => {
+                                    //Todo View patient requests
+                                    success(
+                                      "Patient Requests",
+                                      "This would show all requests for this patient"
+                                    );
+                                  }}
                                 >
-                                  <Edit className="h-4 w-4" />
+                                  <Eye className="h-4 w-4" />
                                 </Button>
-                              </DialogTrigger>
-                              <DialogContent>
-                                <DialogHeader>
-                                  <DialogTitle>Edit Patient</DialogTitle>
-                                  <DialogDescription>
-                                    Update patient information
-                                  </DialogDescription>
-                                </DialogHeader>
-                                {editingPatient && (
-                                  <div className="space-y-4">
-                                    <div>
-                                      <Label htmlFor="editPatientName">
-                                        Patient Name
-                                      </Label>
-                                      <Input
-                                        id="editPatientName"
-                                        value={editingPatient.name}
-                                        onChange={(e) =>
-                                          setEditingPatient({
-                                            ...editingPatient,
-                                            name: e.target.value,
-                                          })
-                                        }
-                                      />
-                                    </div>
-                                    <div>
-                                      <Label htmlFor="editPatientContact">
-                                        Contact
-                                      </Label>
-                                      <Input
-                                        id="editPatientContact"
-                                        value={editingPatient.contact}
-                                        onChange={(e) =>
-                                          setEditingPatient({
-                                            ...editingPatient,
-                                            contact: e.target.value,
-                                          })
-                                        }
-                                      />
-                                    </div>
-                                    <div>
-                                      <Label htmlFor="editPatientNotes">
-                                        Medical Notes
-                                      </Label>
-                                      <Textarea
-                                        id="editPatientNotes"
-                                        value={editingPatient.medicalNotes}
-                                        onChange={(e) =>
-                                          setEditingPatient({
-                                            ...editingPatient,
-                                            medicalNotes: e.target.value,
-                                          })
-                                        }
-                                        className="min-h-[100px]"
-                                      />
-                                    </div>
-                                    <Button
-                                      onClick={handleUpdatePatient}
-                                      className="w-full"
-                                    >
-                                      Update Patient
-                                    </Button>
-                                  </div>
-                                )}
-                              </DialogContent>
-                            </Dialog>
 
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                //Todo View patient requests
-                                success(
-                                  "Patient Requests",
-                                  "This would show all requests for this patient"
-                                );
-                              }}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleSoftDeletePatient(patient.id!)
+                                  }
+                                  className="text-yellow-600 hover:text-yellow-700"
+                                >
+                                  Archive
+                                </Button>
 
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleSoftDeletePatient(patient.id!)
-                              }
-                              className="text-yellow-600 hover:text-yellow-700"
-                            >
-                              Archive
-                            </Button>
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleHardDeletePatient(patient.id!)
-                              }
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleHardDeletePatient(patient.id!)
+                                  }
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                    {patientsTotalPages > 0 && (
+                      <PaginationControls
+                        currentPage={patientsCurrentPage}
+                        totalPages={patientsTotalPages}
+                        onPageChange={setPatientsCurrentPage}
+                      />
+                    )}
+                  </>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -1153,50 +1334,95 @@ export default function AdminDashboard() {
           <TabsContent value="users" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>User Management</CardTitle>
-                <CardDescription>
-                  Manage system users and their roles
-                </CardDescription>
+                <div className="flex items-center flex-wrap gap-5 justify-between">
+                  <div>
+                    <CardTitle>User Management</CardTitle>
+                    <CardDescription>
+                      Manage system users and their roles
+                    </CardDescription>
+                  </div>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search users..."
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      className="pl-10 w-64"
+                    />
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {users.map((user) => (
-                    <Card key={user.id}>
-                      <CardContent className="pt-6">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="font-semibold">
-                              {user.firstName} {user.lastName}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                              @{user.username}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {user.email}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {user.phoneNumber}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <Badge
-                              variant={
-                                user.role === "ADMIN"
-                                  ? "destructive"
-                                  : "secondary"
-                              }
-                            >
-                              {user.role}
-                            </Badge>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {user.enabled ? "Active" : "Disabled"}
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                {filteredUsers.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">
+                      {users.length === 0
+                        ? "No users found"
+                        : "No users match the search query"}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-sm text-muted-foreground mb-4">
+                      Showing {paginatedUsers.length} of {filteredUsers.length}{" "}
+                      users
+                    </div>
+                    <div className="space-y-4">
+                      {paginatedUsers.map((user) => (
+                        <Card key={user.id}>
+                          <CardContent className="pt-6">
+                            <div className="flex items-center flex-wrap justify-between">
+                              <div>
+                                <h3 className="font-semibold">
+                                  {user.firstName} {user.lastName}
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                  @{user.username}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {user.email}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {user.phoneNumber}
+                                </p>
+                              </div>
+                              <div className="flex flex-col items-end gap-2">
+                                <div className="text-right">
+                                  <Badge
+                                    variant={
+                                      user.role === "ADMIN"
+                                        ? "destructive"
+                                        : "secondary"
+                                    }
+                                  >
+                                    {user.role}
+                                  </Badge>
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    {user.enabled ? "Active" : "Disabled"}
+                                  </p>
+                                </div>
+                                <Button variant="outline" size="sm" asChild>
+                                  <Link to={`/user/${user.id}`}>
+                                    <ExternalLink className="h-4 w-4 mr-1" />
+                                    View Details
+                                  </Link>
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                    {usersTotalPages > 0 && (
+                      <PaginationControls
+                        currentPage={usersCurrentPage}
+                        totalPages={usersTotalPages}
+                        onPageChange={setUsersCurrentPage}
+                      />
+                    )}
+                  </>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -1241,138 +1467,151 @@ export default function AdminDashboard() {
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {filteredServiceHistory.map((service) => (
-                      <Card key={service.id}>
-                        <CardContent className="pt-6">
-                          <div className="flex items-start flex-wrap gap-4 justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Badge
-                                  className={getStatusColor(service.status)}
-                                >
-                                  {service.status}
-                                </Badge>
-                                <span className="text-sm text-muted-foreground">
-                                  Service #{service.id}
-                                </span>
-                              </div>
-
-                              <div className="grid md:grid-cols-2 gap-4 text-sm">
-                                <div>
-                                  <p className="font-medium">
-                                    Request ID: {service.requestId}
-                                  </p>
-                                  <p className="text-muted-foreground">
-                                    Ambulance ID: {service.ambulanceId}
-                                  </p>
-                                  <p className="text-muted-foreground">
-                                    Patient ID: {service.patientId}
-                                  </p>
+                  <>
+                    <div className="text-sm text-muted-foreground mb-4">
+                      Showing {paginatedServiceHistory.length} of{" "}
+                      {filteredServiceHistory.length} records
+                    </div>
+                    <div className="space-y-4">
+                      {paginatedServiceHistory.map((service) => (
+                        <Card key={service.id}>
+                          <CardContent className="pt-6">
+                            <div className="flex items-start flex-wrap gap-4 justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Badge
+                                    className={getStatusColor(service.status)}
+                                  >
+                                    {service.status}
+                                  </Badge>
+                                  <span className="text-sm text-muted-foreground">
+                                    Service #{service.id}
+                                  </span>
                                 </div>
-                                <div>
-                                  <p className="font-medium">Timeline:</p>
-                                  <p className="text-muted-foreground">
-                                    Arrival:{" "}
-                                    {service.arrivalTime
-                                      ? new Date(
-                                          service.arrivalTime
-                                        ).toLocaleString()
-                                      : "N/A"}
-                                  </p>
-                                  <p className="text-muted-foreground">
-                                    Completion:{" "}
-                                    {service.completionTime
-                                      ? new Date(
-                                          service.completionTime
-                                        ).toLocaleString()
-                                      : "N/A"}
-                                  </p>
-                                </div>
-                              </div>
 
-                              {service.notes && (
-                                <div className="mt-3 p-3 bg-muted rounded">
-                                  <p className="text-sm font-medium mb-1">
-                                    Notes:
-                                  </p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {service.notes}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="flex gap-2">
-                              {service.status !== "COMPLETED" && (
-                                <Button
-                                  size="sm"
-                                  onClick={() =>
-                                    handleMarkServiceCompleted(
-                                      service.id!,
-                                      "Service completed by admin"
-                                    )
-                                  }
-                                  className="bg-green-600 hover:bg-green-700"
-                                >
-                                  Mark Complete
-                                </Button>
-                              )}
-
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button variant="outline" size="sm">
-                                    <Settings className="h-4 w-4" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>
-                                      Update Service Status
-                                    </DialogTitle>
-                                    <DialogDescription>
-                                      Change the status of this service record
-                                    </DialogDescription>
-                                  </DialogHeader>
-                                  <div className="space-y-4">
-                                    <div>
-                                      <Label className="mb-2">Status</Label>
-                                      <Select
-                                        onValueChange={(value) =>
-                                          handleUpdateServiceStatus(
-                                            service.id!,
-                                            value
-                                          )
-                                        }
-                                      >
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Select new status" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="PENDING">
-                                            Pending
-                                          </SelectItem>
-                                          <SelectItem value="IN_PROGRESS">
-                                            In Progress
-                                          </SelectItem>
-                                          <SelectItem value="COMPLETED">
-                                            Completed
-                                          </SelectItem>
-                                          <SelectItem value="CANCELLED">
-                                            Cancelled
-                                          </SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
+                                <div className="grid md:grid-cols-2 gap-4 text-sm">
+                                  <div>
+                                    <p className="font-medium">
+                                      Request ID: {service.requestId}
+                                    </p>
+                                    <p className="text-muted-foreground">
+                                      Ambulance ID: {service.ambulanceId}
+                                    </p>
+                                    <p className="text-muted-foreground">
+                                      Patient ID: {service.patientId}
+                                    </p>
                                   </div>
-                                </DialogContent>
-                              </Dialog>
+                                  <div>
+                                    <p className="font-medium">Timeline:</p>
+                                    <p className="text-muted-foreground">
+                                      Arrival:{" "}
+                                      {service.arrivalTime
+                                        ? new Date(
+                                            service.arrivalTime
+                                          ).toLocaleString()
+                                        : "N/A"}
+                                    </p>
+                                    <p className="text-muted-foreground">
+                                      Completion:{" "}
+                                      {service.completionTime
+                                        ? new Date(
+                                            service.completionTime
+                                          ).toLocaleString()
+                                        : "N/A"}
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {service.notes && (
+                                  <div className="mt-3 p-3 bg-muted rounded">
+                                    <p className="text-sm font-medium mb-1">
+                                      Notes:
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {service.notes}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex gap-2">
+                                {service.status !== "COMPLETED" && (
+                                  <Button
+                                    size="sm"
+                                    onClick={() =>
+                                      handleMarkServiceCompleted(
+                                        service.id!,
+                                        "Service completed by admin"
+                                      )
+                                    }
+                                    className="bg-green-600 hover:bg-green-700"
+                                  >
+                                    Mark Complete
+                                  </Button>
+                                )}
+
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button variant="outline" size="sm">
+                                      <Settings className="h-4 w-4" />
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>
+                                        Update Service Status
+                                      </DialogTitle>
+                                      <DialogDescription>
+                                        Change the status of this service record
+                                      </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4">
+                                      <div>
+                                        <Label className="mb-2">Status</Label>
+                                        <Select
+                                          onValueChange={(value) =>
+                                            handleUpdateServiceStatus(
+                                              service.id!,
+                                              value
+                                            )
+                                          }
+                                        >
+                                          <SelectTrigger>
+                                            <SelectValue placeholder="Select new status" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="PENDING">
+                                              Pending
+                                            </SelectItem>
+                                            <SelectItem value="IN_PROGRESS">
+                                              In Progress
+                                            </SelectItem>
+                                            <SelectItem value="COMPLETED">
+                                              Completed
+                                            </SelectItem>
+                                            <SelectItem value="CANCELLED">
+                                              Cancelled
+                                            </SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    </div>
+                                  </DialogContent>
+                                </Dialog>
+                              </div>
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                    {serviceHistoryTotalPages > 0 && (
+                      <PaginationControls
+                        currentPage={serviceHistoryCurrentPage}
+                        totalPages={serviceHistoryTotalPages}
+                        onPageChange={setServiceHistoryCurrentPage}
+                      />
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
