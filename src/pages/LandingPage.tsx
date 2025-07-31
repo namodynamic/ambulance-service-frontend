@@ -2,7 +2,35 @@ import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Clock, MapPin, Phone, Shield, Users, CheckCircle, Siren } from "lucide-react"
+import { MapView } from "@/components/MapView"
 import Footer from "@/components/Footer"
+
+const mockAmbulances = [
+  {
+    id: 1,
+    licensePlate: "AMB-001",
+    location: "Downtown Medical Center",
+    status: "AVAILABLE" as const,
+  },
+  {
+    id: 2,
+    licensePlate: "AMB-002",
+    location: "City Hospital",
+    status: "ON_DUTY" as const,
+  },
+  {
+    id: 3,
+    licensePlate: "AMB-003",
+    location: "Emergency Station North",
+    status: "AVAILABLE" as const,
+  },
+  {
+    id: 4,
+    licensePlate: "AMB-004",
+    location: "Central Dispatch",
+    status: "MAINTENANCE" as const,
+  },
+]
 
 export default function LandingPage() {
   return (
@@ -39,6 +67,25 @@ export default function LandingPage() {
             </div>
 
             <p className="text-lg text-gray-500 dark:text-gray-400">Available 24/7 - Login required for tracking</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 bg-background">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Live Ambulance Tracking</h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              See our ambulances in real-time across the city, ready to respond to emergencies
+            </p>
+          </div>
+
+          <div className="max-w-6xl mx-auto">
+            <MapView
+              ambulances={mockAmbulances}
+              requests={[]}
+              className="border-2 border-gray-200 dark:border-gray-700 shadow-lg"
+            />
           </div>
         </div>
       </section>

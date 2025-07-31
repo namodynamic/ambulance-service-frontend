@@ -21,10 +21,16 @@ import {
   Loader2,
   Navigation,
   History,
+  Ambulance,
+  Phone,
+  User,
+  FileText,
 } from "lucide-react";
 import { requestAPI } from "@/api/ambulanceServiceAPI";
 import { BackButton } from "@/components/BackButton";
 import type { EmergencyRequest, RequestStatus } from "@/types";
+import StatusTimeline from "@/components/StatusTimeline";
+import { Separator } from "@/components/ui/separator";
 
 export default function RequestStatusPage() {
   const { id } = useParams<{ id: string }>();
@@ -93,6 +99,25 @@ export default function RequestStatusPage() {
     }
   };
 
+  const getStatusMessage = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "pending":
+        return "Your request has been received and is being processed.";
+      case "dispatched":
+        return "An ambulance has been dispatched to your location.";
+      case "in_progress":
+        return "The ambulance is on its way to your location.";
+      case "arrived":
+        return "The ambulance has arrived at your location.";
+      case "completed":
+        return "The emergency service has been completed.";
+      case "cancelled":
+        return "This request has been cancelled.";
+      default:
+        return "Status unknown.";
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen">
@@ -122,137 +147,227 @@ export default function RequestStatusPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-10 px-4 container mx-auto">
-      <div className="max-w-3xl mx-auto space-y-6">
-        <BackButton isAuthenticated={isAuthenticated} />
-        {isAuthenticated && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-xl flex justify-between items-center">
-                  Request #{String(request.id).padStart(4, "0")}
-                  <Badge
-                    className={`${getStatusColor(request.status)} text-sm`}
-                  >
-                    {getStatusIcon(request.status)}
-                    <span className="ml-1 capitalize">
-                      {request.status.replace("_", " ")}
-                    </span>
-                  </Badge>
-                </CardTitle>
-                <CardDescription>
-                  Submitted on{" "}
-                  {new Date(request.requestTime ?? "").toLocaleString()}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="font-semibold">Requester</h4>
-                  <p className="text-muted-foreground">
-                    {request.userName} ({request.userContact})
-                  </p>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold">Location</h4>
-                  <p className="text-muted-foreground">{request.location}</p>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold">Emergency Description</h4>
-                  <p className="text-muted-foreground">
-                    {request.emergencyDescription}
-                  </p>
-                </div>
-
-                {request.medicalNotes && (
-                  <div>
-                    <h4 className="font-semibold">Medical Notes</h4>
-                    <p className="text-muted-foreground">
-                      {request.medicalNotes}
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Status History */}
-            {request.statusHistory?.length > 0 && (
-              <Card>
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <BackButton isAuthenticated={isAuthenticated} />
+          {isAuthenticated && (
+            <div>
+              <Card className="mb-6 border-l-4 border-l-blue-500">
                 <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <History className="w-5 h-5 mr-2" />
-                    Status History
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {request.statusHistory.map((entry) => (
-                    <div key={entry.id} className="border-l-2 pl-4">
-                      <p className="font-medium">
-                        {entry.oldStatus
-                          ? `${entry.oldStatus} → ${entry.newStatus}`
-                          : `${entry.newStatus}`}
-                      </p>
-                      <p className="text-muted-foreground text-sm">
-                        {entry.notes}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        By {entry.changedBy} on{" "}
-                        {new Date(entry.createdAt).toLocaleString()}
-                      </p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg md:text-2xl flex items-center gap-2">
+                        <FileText className="h-6 w-6" />
+                        Request #{String(request.id).padStart(4, "0")}
+                      </CardTitle>
+                      <CardDescription>
+                        Submitted on{" "}
+                        {request.requestTime &&
+                          new Date(request.requestTime).toLocaleString()}
+                      </CardDescription>
                     </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Live Tracking */}
-            {(request.status === "DISPATCHED" ||
-              request.status === "IN_PROGRESS") && (
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle>Live Tracking</CardTitle>
-                  <CardDescription>
-                    Track your ambulance in real-time
-                  </CardDescription>
+                    <Badge
+                      className={`${getStatusColor(
+                        request.status
+                      )} text-sm md:text-lg px-4 py-2`}
+                    >
+                      {getStatusIcon(request.status)}
+                      <span className="ml-1 capitalize">
+                        {request.status?.replace("_", " ")}
+                      </span>
+                    </Badge>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="bg-muted rounded-lg p-8 text-center">
-                    <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">
-                      Map integration would be displayed here
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      (Leaflet/Mapbox integration placeholder)
+                  <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
+                    <p className="text-lg font-medium text-blue-900 dark:text-blue-100">
+                      {getStatusMessage(request.status)}
                     </p>
                   </div>
                 </CardContent>
               </Card>
-            )}
-          </div>
-        )}
 
-        {!isAuthenticated && (
-          <Card className="mt-6 border-blue-200 dark:border-blue-800">
-            <CardHeader>
-              <CardTitle>Want to track all your requests?</CardTitle>
-              <CardDescription>
-                Create an account to view your request history and get
-                notifications
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-4">
-                <Button asChild>
-                  <Link to="/register">Create Account</Link>
-                </Button>
-                <Button variant="outline" asChild>
-                  <Link to="/login">Login</Link>
-                </Button>
+              <div className="grid lg:grid-cols-2 gap-6 mb-6 items-start">
+                <Card className="h-auto">
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <MapPin className="h-5 w-5 mr-2" />
+                      Emergency Details
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <h4 className="font-semibold mb-1">Location</h4>
+                      <p className="text-muted-foreground">
+                        {request.location}
+                      </p>
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                      <h4 className="font-semibold mb-1">Description</h4>
+                      <p className="text-muted-foreground">
+                        {request.emergencyDescription}
+                      </p>
+                    </div>
+
+                    {request.medicalNotes && (
+                      <>
+                        <Separator />
+                        <div>
+                          <h4 className="font-semibold mb-1">Medical Notes</h4>
+                          <p className="text-muted-foreground bg-yellow-50 dark:bg-yellow-950/20 p-3 rounded">
+                            {request.medicalNotes}
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="h-auto">
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <User className="h-5 w-5 mr-2" />
+                      Contact Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <h4 className="font-semibold mb-1">Caller</h4>
+                      <p className="text-muted-foreground">
+                        {request.userName}
+                      </p>
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                      <h4 className="font-semibold mb-1">Patient</h4>
+                      <p className="text-muted-foreground">
+                        {request.patientName}
+                      </p>
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                      <h4 className="font-semibold mb-1 flex items-center">
+                        <Phone className="h-4 w-4 mr-1" />
+                        Contact Number
+                      </h4>
+                      <p className="text-muted-foreground">
+                        {request.userContact}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
-        )}
+
+              {request.ambulance && (
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Ambulance className="h-5 w-5 mr-2" />
+                      Assigned Ambulance
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div>
+                        <h4 className="font-semibold mb-1">Vehicle Number</h4>
+                        <p className="text-muted-foreground">
+                          AMB-
+                          {request.ambulance.licensePlate ||
+                            request.ambulance.id}
+                        </p>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold mb-1">Driver</h4>
+                        <p className="text-muted-foreground">
+                          {request.ambulance.driverName || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold mb-1">Current Location</h4>
+                        <p className="text-muted-foreground">
+                          {request.ambulance.currentLocation || "Unknown"}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {request.statusHistory && request.statusHistory.length > 0 && (
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <History className="h-5 w-5 mr-2" />
+                      Status Timeline
+                    </CardTitle>
+                    <CardDescription>
+                      Track the progress of your emergency request
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <StatusTimeline
+                      statusHistory={request.statusHistory}
+                      currentStatus={request.status}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+
+              {(request.status === "DISPATCHED" ||
+                request.status === "IN_PROGRESS") && (
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle>Live Tracking</CardTitle>
+                    <CardDescription>
+                      Track your ambulance in real-time
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="bg-muted rounded-lg p-8 text-center">
+                      <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">
+                        Real-time map tracking would be displayed here
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        (Integration with mapping service)
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {!isAuthenticated && (
+            <Card className="border-blue-200 dark:border-blue-800">
+              <CardHeader>
+                <CardTitle>Want to track all your requests?</CardTitle>
+                <CardDescription>
+                  Create an account to view your request history and get
+                  notifications
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-4">
+                  <Button asChild>
+                    <Link to="/register">Create Account</Link>
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <Link to="/login">Login</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -18,7 +18,7 @@ import type { AxiosError } from "axios"
 const requestSchema = z.object({
   userName: z.string(),
   patientName: z.string().min(2, "Patient name is required"),
-  userContact: z.string().min(10, "Phone number must be at least 10 digits").max(15, "Phone number must be at most 15 digits").regex(/^\+?[0-9]{10,15}$/, "Invalid phone number format"),
+  userContact: z.string().min(10, "Phone number must be at least 10 digits").max(15, "Phone number must be at most 15 digits").regex(/^\+?[0-9]{10,15}$/, "Phone number must be 10 to 15 digits and may start with a '+' sign. No spaces or special characters.(e.g., +1234567890, 1234567890)"),
   location: z.string().min(5, "Please provide a detailed location"),
   emergencyDescription: z.string().max(255, "Please provide a short description of the emergency"),
   medicalNotes: z.string().optional(),

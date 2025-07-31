@@ -148,7 +148,6 @@ useEffect(() => {
           </Card>
         </div>
 
-        {/* Active Requests */}
         {activeRequests.length > 0 && (
           <div className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">Active Requests</h2>
@@ -163,7 +162,7 @@ useEffect(() => {
                             {getStatusIcon(request.status)}
                             <span className="ml-1 capitalize">{request.status?.replace("_", " ")}</span>
                           </Badge>
-                          <span className="text-sm text-muted-foreground">#{request.id.toString().slice(-8)}</span>
+                          <span className="text-sm text-muted-foreground">REQ-{request.id.toString().padStart(4, "0")}</span>
                         </div>
                         <p className="font-medium mb-1">{request.location}</p>
                         <p className="text-sm text-muted-foreground mb-2">{request.emergencyDescription}</p>
@@ -182,7 +181,6 @@ useEffect(() => {
           </div>
         )}
 
-        {/* Recent Requests */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-semibold">Recent Requests</h2>
@@ -211,7 +209,7 @@ useEffect(() => {
                             {getStatusIcon(request.status)}
                             <span className="ml-1 capitalize">{request.status?.replace("_", " ")}</span>
                           </Badge>
-                          <span className="text-sm text-muted-foreground">#{request.id.toString().slice(-8)}</span>
+                          <span className="text-sm text-muted-foreground">REQ-{request.id.toString().padStart(4, "0")}</span>
                         </div>
                         <p className="font-medium mb-1">{request.location}</p>
                         <p className="text-xs text-muted-foreground">
