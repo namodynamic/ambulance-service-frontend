@@ -142,7 +142,7 @@ export const ambulanceAPI = {
   },
 
   updateStatus: async (id: number, status: AmbulanceData["status"]) => {
-    const response = await apiRequest.patch(`/ambulances/${id}/status`, {
+    const response = await apiRequest.put(`/ambulances/${id}/status`, {
       status,
     });
     return response.data;
@@ -183,6 +183,19 @@ export const requestAPI = {
     const response = await apiRequest.get(`/requests/${id}/history`)
     return response.data
   },
+
+  getByPatient: async (patientId: number): Promise<EmergencyRequest[]> => {
+    const response = await apiRequest.get<EmergencyRequest[]>(`/requests/patient/${patientId}`)
+    return response.data
+  },
+
+   updateStatus: async (id: number, status: string, notes?: string) => {
+    const response = await apiRequest.patch(`/requests/${id}/status`, {
+      status,
+      notes,
+    })
+    return response.data
+  },
 }
 
 // Dispatch API
@@ -200,6 +213,11 @@ export const patientAPI = {
     return response.data
   },
 
+  getById: async (id: number): Promise<Patient> => {
+    const response = await apiRequest.get<Patient>(`/patients/${id}`)
+    return response.data
+  },
+
   create: async (data: {
     name: string
     contact: string
@@ -207,6 +225,19 @@ export const patientAPI = {
   }): Promise<Patient> => {
     const response = await apiRequest.post<Patient>("/patients", data)
     return response.data
+  },
+
+  update: async (id: number, data: Partial<Patient>): Promise<Patient> => {
+    const response = await apiRequest.put<Patient>(`/patients/${id}`, data)
+    return response.data
+  },
+
+   softDelete: async (id: number): Promise<void> => {
+    await apiRequest.patch(`/patients/${id}/soft-delete`)
+  },
+
+  hardDelete: async (id: number): Promise<void> => {
+    await apiRequest.delete(`/patients/${id}`)
   },
 }
 
@@ -224,6 +255,21 @@ export const serviceHistoryAPI = {
 
   getByDateRange: async (start: string, end: string): Promise<ServiceHistory[]> => {
     const response = await apiRequest.get<ServiceHistory[]>(`/service-history/date-range?start=${start}&end=${end}`)
+    return response.data
+  },
+
+  updateStatus: async (id: number, status: string, notes?: string) => {
+    const response = await apiRequest.patch(`/service-history/${id}/status`, {
+      status,
+      notes,
+    })
+    return response.data
+  },
+
+  markCompleted: async (id: number, notes?: string) => {
+    const response = await apiRequest.patch(`/service-history/${id}/complete`, {
+      notes,
+    })
     return response.data
   },
 }

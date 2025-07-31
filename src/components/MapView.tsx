@@ -181,6 +181,10 @@ export function MapView({
                 <span>On Duty Ambulance</span>
               </div>
               <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
+                <span>Dispatched Ambulance</span>
+              </div>
+              <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
                 <span>Pending Request</span>
               </div>
@@ -197,7 +201,13 @@ export function MapView({
         </div>
 
         {/* Map Statistics */}
-        <div className="grid grid-cols-3 gap-4 mt-4">
+        <div className="grid grid-cols-4 gap-4 mt-4">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-amber-600">
+            {ambulances.filter((a) => a.status === "DISPATCHED").length}
+            </div>
+            <div className="text-sm text-muted-foreground">Dispatched</div>
+          </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">
               {ambulances.filter((a) => a.status === "AVAILABLE").length}
