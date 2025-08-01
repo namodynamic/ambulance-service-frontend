@@ -1,5 +1,5 @@
 import axios, { AxiosError } from "axios";
-import type { AmbulanceData, AuthResponse, EmergencyRequest, LoginCredentials, PaginatedResponse, Patient, RegisterData, ServiceHistory, User, UserRequestHistory } from "@/types";
+import type { AmbulanceData, AuthResponse, DashboardStats, EmergencyRequest, LoginCredentials, PaginatedResponse, Patient, RegisterData, ServiceHistory, User, UserRequestHistory } from "@/types";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 const API_BASE_URL = `${BASE_URL}/api`;
@@ -101,6 +101,14 @@ export const getCurrentUser = (): User | null => {
   }
 };
 
+// Admin API
+export const adminAPI = {
+  getDashboardStats: async (): Promise<DashboardStats> => {
+    const response = await apiRequest.get<DashboardStats>('/admin/dashboard');
+    return response.data;
+  },
+};
+
 // Ambulance API
 export const ambulanceAPI = {
   getAll: async (): Promise<AmbulanceData[]> => {
@@ -124,7 +132,7 @@ export const ambulanceAPI = {
 
   create: async (data: Omit<AmbulanceData, "id">): Promise<AmbulanceData> => {
     const response = await apiRequest.post<AmbulanceData>(
-      "/ambulances",
+      "admin/ambulances",
       data
     );
     return response.data;
@@ -134,8 +142,8 @@ export const ambulanceAPI = {
     id: number,
     data: Partial<AmbulanceData>
   ): Promise<AmbulanceData> => {
-    const response = await apiRequest.put<AmbulanceData>(
-      `/ambulances/${id}`,
+    const response = await apiRequest.patch<AmbulanceData>(
+      `admin/ambulances/${id}`,
       data
     );
     return response.data;
@@ -148,12 +156,17 @@ export const ambulanceAPI = {
     return response.data;
   },
 
+  markAvailable: async (id: number) => {
+    const response = await apiRequest.put(`/ambulances/${id}/status?status=AVAILABLE`);
+    return response.data;
+  },
+
   delete: async (id: number): Promise<void> => {
-    await apiRequest.delete(`/ambulances/${id}`);
+    await apiRequest.delete(`admin/ambulances/${id}`);
   },
 };
 
-// Emergency Request API
+// Request API
 export const requestAPI = {
   create: async (data: {
     userName: string
@@ -233,16 +246,16 @@ export const patientAPI = {
   },
 
   update: async (id: number, data: Partial<Patient>): Promise<Patient> => {
-    const response = await apiRequest.put<Patient>(`/patients/${id}`, data)
+    const response = await apiRequest.put<Patient>(`admin/patients/${id}`, data)
     return response.data
   },
 
    softDelete: async (id: number): Promise<void> => {
-    await apiRequest.patch(`/patients/${id}/soft-delete`)
+    await apiRequest.delete(`admin/patients/${id}/soft-delete`)
   },
 
   hardDelete: async (id: number): Promise<void> => {
-    await apiRequest.delete(`/patients/${id}`)
+    await apiRequest.delete(`admin/patients/${id}`)
   },
 }
 
@@ -264,7 +277,7 @@ export const serviceHistoryAPI = {
   },
 
   updateStatus: async (id: number, status: string, notes?: string) => {
-    const response = await apiRequest.patch(`/service-history/${id}/status`, {
+    const response = await apiRequest.patch(`/admin/service-history/${id}/status`, {
       status,
       notes,
     })
@@ -272,7 +285,7 @@ export const serviceHistoryAPI = {
   },
 
   markCompleted: async (id: number, notes?: string) => {
-    const response = await apiRequest.patch(`/service-history/${id}/complete`, {
+    const response = await apiRequest.post(`admin/service-history/${id}/complete`, {
       notes,
     })
     return response.data

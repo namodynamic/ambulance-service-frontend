@@ -143,3 +143,15 @@ export interface UserRequestHistory {
   status: string;
   statusHistory: RequestStatusHistory[];
 }
+
+export interface DashboardStats {
+  totalRequests: number;
+  pendingRequests: number;
+  completedRequests: number;
+  inProgressRequests: number;
+  totalAmbulances: number;
+  availableAmbulances: number;
+  dispatchedAmbulances: number;
+  onDutyAmbulances: number;
+  totalPatients: number;
+}
