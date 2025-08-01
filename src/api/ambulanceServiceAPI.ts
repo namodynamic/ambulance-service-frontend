@@ -184,8 +184,8 @@ export const requestAPI = {
     return response.data
   },
 
-  getByPatient: async (patientId: number): Promise<EmergencyRequest[]> => {
-    const response = await apiRequest.get<EmergencyRequest[]>(`/requests/patient/${patientId}`)
+  getByPatientId: async (patientId: number): Promise<EmergencyRequest[]> => {
+    const response = await apiRequest.get<EmergencyRequest[]>(`/admin/patients/${patientId}/requests`)
     return response.data
   },
 
@@ -196,6 +196,11 @@ export const requestAPI = {
     })
     return response.data
   },
+
+  getByUserId: async (userId: number): Promise<EmergencyRequest[]> => {
+    const response = await apiRequest.get<EmergencyRequest[]>(`/admin/users/${userId}/requests`)
+    return response.data
+  }
 }
 
 // Dispatch API

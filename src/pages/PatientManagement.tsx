@@ -117,7 +117,7 @@ export default function PatientManagementPage() {
   const fetchPatientRequests = async (patientId: number) => {
     setLoadingRequests(true);
     try {
-      const data = await requestAPI.getByPatient(patientId);
+      const data = await requestAPI.getByPatientId(patientId);
       setPatientRequests(data);
     } catch (error: unknown) {
       let message = "Error loading patient requests";

@@ -17,6 +17,7 @@ import RequestStatusPage from "./pages/RequestStatusPage";
 import RequestHistoryPage from "./pages/RequestHistoryPage";
 import PatientManagementPage from "./pages/PatientManagement";
 import ServiceHistoryPage from "./pages/ServiceHistoryPage";
+import UserDetailsPage from "./pages/UserDetailsPage";
 
 function App() {
   return (
@@ -33,6 +34,8 @@ function App() {
               <Route path="/request/new" element={<RequestPage />} />
               <Route path="/request/:id" element={<RequestStatusPage />} />
               <Route path="/request/success/:id" element={<RequestSuccessPage />} />
+              <Route path="/user/:id" element={<AdminRoute><UserDetailsPage /></AdminRoute>} />
+
 
               <Route
                 path="/admin/dashboard"
