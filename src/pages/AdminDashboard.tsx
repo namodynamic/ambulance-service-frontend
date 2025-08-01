@@ -120,6 +120,8 @@ export default function AdminDashboard() {
   const [serviceFilter, setServiceFilter] = useState("all");
   const [userSearch, setUserSearch] = useState("");
   const [patientSearch, setPatientSearch] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [notes, setNotes] = useState<string>("");
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pendingCurrentPage, setPendingCurrentPage] = useState(1);
@@ -174,7 +176,8 @@ export default function AdminDashboard() {
         totalRequests: requestsData.totalElements || requests.length,
         activeRequests: activeReqsCount,
         availableAmbulances: ambulancesData.filter(
-          (a: AmbulanceData) => a.status === "AVAILABLE"
+          (a: AmbulanceData) =>
+            a.availability === ("AVAILABLE" as AmbulanceData["status"])
         ).length,
         totalAmbulances: ambulancesData.length,
         totalUsers: usersData.length,
@@ -196,6 +199,7 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -235,7 +239,7 @@ export default function AdminDashboard() {
     try {
       await ambulanceAPI.create({
         licensePlate: newAmbulance.licensePlate,
-        location: newAmbulance.location,
+        currentLocation: newAmbulance.location,
         status: newAmbulance.status,
       });
       success("Ambulance created", "New ambulance has been added to the fleet");
@@ -258,7 +262,10 @@ export default function AdminDashboard() {
     if (!editingAmbulance?.id) return;
 
     try {
-      await ambulanceAPI.update(editingAmbulance.id, editingAmbulance);
+      await ambulanceAPI.update(editingAmbulance.id, {
+        ...editingAmbulance,
+        availability: editingAmbulance.status,
+      });
       success("Ambulance updated", "Ambulance information has been updated");
       setEditingAmbulance(null);
       fetchDashboardData();
@@ -273,7 +280,7 @@ export default function AdminDashboard() {
 
   const handleMarkAvailable = async (id: number) => {
     try {
-      await ambulanceAPI.updateStatus(id, "AVAILABLE");
+      await ambulanceAPI.markAvailable(id);
       success(
         "Ambulance marked as available",
         "Ambulance is now ready for dispatch"
@@ -338,9 +345,12 @@ export default function AdminDashboard() {
       await patientAPI.hardDelete(id);
       success("Patient deleted", "Patient has been permanently deleted");
       fetchDashboardData();
-    } catch (error: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
       let message = "Failed to delete patient";
-      if (error instanceof Error) {
+      if (error?.response?.status === 409 && error?.response?.data) {
+        message = error.response.data;
+      } else if (error instanceof Error) {
         message = error.message || message;
       }
       notifyError("Failed to delete patient", message);
@@ -633,7 +643,7 @@ export default function AdminDashboard() {
           <TabsList className="w-full justify-start overflow-x-auto gap-2 md:grid md:grid-cols-6 mb-6">
             <TabsTrigger value="pending">Pending</TabsTrigger>
             <TabsTrigger value="requests">All Requests</TabsTrigger>
-            <TabsTrigger value="ambulances">Fleet</TabsTrigger>
+            <TabsTrigger value="ambulances">Ambulances</TabsTrigger>
             <TabsTrigger value="patients">Patients</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="history">Service History</TabsTrigger>
@@ -877,7 +887,7 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          {/* Fleet */}
+          {/* Ambulances */}
           <TabsContent value="ambulances" className="space-y-4">
             <Card>
               <CardHeader>
@@ -903,7 +913,7 @@ export default function AdminDashboard() {
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
-                        <div>
+                        <div className="space-y-2">
                           <Label htmlFor="plateNumber">License Plate</Label>
                           <Input
                             id="plateNumber"
@@ -916,7 +926,7 @@ export default function AdminDashboard() {
                             }
                           />
                         </div>
-                        <div>
+                        <div className="space-y-2">
                           <Label htmlFor="location">Location</Label>
                           <Input
                             id="location"
@@ -929,7 +939,7 @@ export default function AdminDashboard() {
                             }
                           />
                         </div>
-                        <div>
+                        <div className="space-y-2">
                           <Label htmlFor="status">Status</Label>
                           <Select
                             value={newAmbulance.status}
@@ -953,6 +963,9 @@ export default function AdminDashboard() {
                               </SelectItem>
                               <SelectItem value="OUT_OF_SERVICE">
                                 Out of Service
+                              </SelectItem>
+                              <SelectItem value="UNAVAILABLE">
+                                Unavailable
                               </SelectItem>
                             </SelectContent>
                           </Select>
@@ -1001,6 +1014,7 @@ export default function AdminDashboard() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setEditingAmbulance(ambulance)}
+                                title="Edit Ambulance"
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
@@ -1014,7 +1028,7 @@ export default function AdminDashboard() {
                               </DialogHeader>
                               {editingAmbulance && (
                                 <div className="space-y-4">
-                                  <div>
+                                  <div className="space-y-2">
                                     <Label htmlFor="editPlateNumber">
                                       License Plate
                                     </Label>
@@ -1029,7 +1043,7 @@ export default function AdminDashboard() {
                                       }
                                     />
                                   </div>
-                                  <div>
+                                  <div className="space-y-2">
                                     <Label htmlFor="editDriverName">
                                       Driver Name
                                     </Label>
@@ -1044,7 +1058,7 @@ export default function AdminDashboard() {
                                       }
                                     />
                                   </div>
-                                  <div>
+                                  <div className="space-y-2">
                                     <Label htmlFor="editLocation">
                                       Location
                                     </Label>
@@ -1059,7 +1073,7 @@ export default function AdminDashboard() {
                                       }
                                     />
                                   </div>
-                                  <div>
+                                  <div className="space-y-2">
                                     <Label htmlFor="editStatus">Status</Label>
                                     <Select
                                       value={editingAmbulance.status}
@@ -1090,6 +1104,9 @@ export default function AdminDashboard() {
                                         <SelectItem value="OUT_OF_SERVICE">
                                           Out of Service
                                         </SelectItem>
+                                        <SelectItem value="UNAVAILABLE">
+                                          Unavailable
+                                        </SelectItem>
                                       </SelectContent>
                                     </Select>
                                   </div>
@@ -1110,6 +1127,7 @@ export default function AdminDashboard() {
                               size="sm"
                               onClick={() => handleMarkAvailable(ambulance.id!)}
                               className="text-green-600 hover:text-green-700"
+                              title="Mark Available"
                             >
                               <UserCheck className="h-4 w-4" />
                             </Button>
@@ -1119,6 +1137,8 @@ export default function AdminDashboard() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleDeleteAmbulance(ambulance.id!)}
+                            className="text-red-600 hover:text-red-700"
+                            title="Delete Ambulance"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -1219,7 +1239,7 @@ export default function AdminDashboard() {
                                     </DialogHeader>
                                     {editingPatient && (
                                       <div className="space-y-4">
-                                        <div>
+                                        <div className="space-y-2">
                                           <Label htmlFor="editPatientName">
                                             Patient Name
                                           </Label>
@@ -1234,7 +1254,7 @@ export default function AdminDashboard() {
                                             }
                                           />
                                         </div>
-                                        <div>
+                                        <div className="space-y-2">
                                           <Label htmlFor="editPatientContact">
                                             Contact
                                           </Label>
@@ -1249,7 +1269,7 @@ export default function AdminDashboard() {
                                             }
                                           />
                                         </div>
-                                        <div>
+                                        <div className="space-y-2">
                                           <Label htmlFor="editPatientNotes">
                                             Medical Notes
                                           </Label>
@@ -1452,6 +1472,7 @@ export default function AdminDashboard() {
                       <SelectItem value="all">All Status</SelectItem>
                       <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="arrived">Arrived</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
                       <SelectItem value="cancelled">Cancelled</SelectItem>
                     </SelectContent>
@@ -1570,10 +1591,7 @@ export default function AdminDashboard() {
                                         <Label className="mb-2">Status</Label>
                                         <Select
                                           onValueChange={(value) =>
-                                            handleUpdateServiceStatus(
-                                              service.id!,
-                                              value
-                                            )
+                                            setSelectedStatus(value)
                                           }
                                         >
                                           <SelectTrigger>
@@ -1586,6 +1604,9 @@ export default function AdminDashboard() {
                                             <SelectItem value="IN_PROGRESS">
                                               In Progress
                                             </SelectItem>
+                                            <SelectItem value="ARRIVED">
+                                              Arrived
+                                            </SelectItem>
                                             <SelectItem value="COMPLETED">
                                               Completed
                                             </SelectItem>
@@ -1594,6 +1615,45 @@ export default function AdminDashboard() {
                                             </SelectItem>
                                           </SelectContent>
                                         </Select>
+                                      </div>
+                                      <div>
+                                        <Label htmlFor="notes" className="mb-2">
+                                          Notes (Optional)
+                                        </Label>
+                                        <Textarea
+                                          id="notes"
+                                          placeholder="Add any notes about this status update..."
+                                          value={notes}
+                                          onChange={(e) =>
+                                            setNotes(e.target.value)
+                                          }
+                                          className="min-h-[100px]"
+                                        />
+                                      </div>
+                                      <div className="flex justify-end gap-2 pt-2">
+                                        <Button
+                                          variant="outline"
+                                          onClick={() => {
+                                            setNotes("");
+                                            setSelectedStatus("");
+                                          }}
+                                        >
+                                          Cancel
+                                        </Button>
+                                        <Button
+                                          onClick={() => {
+                                            handleUpdateServiceStatus(
+                                              service.id!,
+                                              selectedStatus,
+                                              notes
+                                            );
+                                            setNotes("");
+                                            setSelectedStatus("");
+                                          }}
+                                          disabled={!selectedStatus}
+                                        >
+                                          Update Status
+                                        </Button>
                                       </div>
                                     </div>
                                   </DialogContent>

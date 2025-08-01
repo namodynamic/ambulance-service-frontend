@@ -25,19 +25,39 @@ import {
   Phone,
   User,
   FileText,
+  Settings,
 } from "lucide-react";
-import { requestAPI } from "@/api/ambulanceServiceAPI";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { requestAPI, serviceHistoryAPI } from "@/api/ambulanceServiceAPI";
 import { BackButton } from "@/components/BackButton";
 import type { EmergencyRequest, RequestStatus } from "@/types";
 import StatusTimeline from "@/components/StatusTimeline";
 import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function RequestStatusPage() {
   const { id } = useParams<{ id: string }>();
-  const { error: notifyError } = useNotification();
-  const { isAuthenticated } = useAuth();
+  const { success, error: notifyError } = useNotification();
+  const { isAuthenticated, isAdmin } = useAuth();
   const [request, setRequest] = useState<EmergencyRequest | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [notes, setNotes] = useState<string>("");
 
   useEffect(() => {
     const fetchRequest = async () => {
@@ -61,6 +81,23 @@ export default function RequestStatusPage() {
     const interval = setInterval(fetchRequest, 30000);
     return () => clearInterval(interval);
   }, [id, notifyError]);
+
+  const handleUpdateServiceStatus = async (
+    id: number,
+    status: string,
+    notes?: string
+  ) => {
+    try {
+      await serviceHistoryAPI.updateStatus(id, status, notes);
+      success("Service status updated", "Service history has been updated");
+    } catch (error: unknown) {
+      let message = "Failed to update service status";
+      if (error instanceof Error) {
+        message = error.message || message;
+      }
+      notifyError("Failed to update service", message);
+    }
+  };
 
   const getStatusColor = (status: RequestStatus) => {
     switch (status) {
@@ -166,16 +203,105 @@ export default function RequestStatusPage() {
                           new Date(request.requestTime).toLocaleString()}
                       </CardDescription>
                     </div>
-                    <Badge
-                      className={`${getStatusColor(
-                        request.status
-                      )} text-sm md:text-lg px-4 py-2`}
-                    >
-                      {getStatusIcon(request.status)}
-                      <span className="ml-1 capitalize">
-                        {request.status?.replace("_", " ")}
-                      </span>
-                    </Badge>
+                    <div className="flex items-center flex-col justify-between gap-4">
+                      <Badge
+                        className={`${getStatusColor(
+                          request.status
+                        )} text-sm  px-4 py-2`}
+                      >
+                        {getStatusIcon(request.status)}
+                        <span className="ml-1 capitalize">
+                          {request.status?.replace("_", " ")}
+                        </span>
+                      </Badge>
+
+                      {isAdmin && (
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Settings className="h-4 w-4" />
+                              Update Status
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Update Service Status</DialogTitle>
+                              <DialogDescription>
+                                Change the status of this service record
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <Label className="mb-2">Status</Label>
+                                <Select
+                                  onValueChange={(value) =>
+                                    setSelectedStatus(value)
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select new status" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="PENDING">
+                                      Pending
+                                    </SelectItem>
+                                    <SelectItem value="IN_PROGRESS">
+                                      In Progress
+                                    </SelectItem>
+                                    <SelectItem value="ARRIVED">
+                                      Arrived
+                                    </SelectItem>
+                                    <SelectItem value="COMPLETED">
+                                      Completed
+                                    </SelectItem>
+                                    <SelectItem value="CANCELLED">
+                                      Cancelled
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label htmlFor="notes" className="mb-2">
+                                  Notes (Optional)
+                                </Label>
+                                <Textarea
+                                  id="notes"
+                                  placeholder="Add any notes about this status update..."
+                                  value={notes}
+                                  onChange={(e) => setNotes(e.target.value)}
+                                  className="min-h-[100px]"
+                                />
+                              </div>
+                              <div className="flex justify-end gap-2 pt-2">
+                                <Button
+                                  variant="outline"
+                                  onClick={() => {
+                                    setNotes("");
+                                    setSelectedStatus("");
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  onClick={() => {
+                                    handleUpdateServiceStatus(
+                                      request.id!,
+                                      selectedStatus,
+                                      notes
+                                    );
+                                    setNotes("");
+                                    setSelectedStatus("");
+                                  }}
+                                  disabled={!selectedStatus}
+                                >
+                                  Update Status
+                                </Button>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>

@@ -388,6 +388,7 @@ export default function PatientManagementPage() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => setEditingPatient(patient)}
+                                  title="Edit Patient"
                                 >
                                   <Edit className="h-4 w-4" />
                                 </Button>
@@ -450,6 +451,7 @@ export default function PatientManagementPage() {
                                     <Button
                                       onClick={handleUpdatePatient}
                                       className="w-full"
+                                      title="Update Patient"
                                     >
                                       Update Patient
                                     </Button>
@@ -467,6 +469,7 @@ export default function PatientManagementPage() {
                                     setSelectedPatient(patient);
                                     fetchPatientRequests(patient.id!);
                                   }}
+                                  title="View Patient Requests"
                                 >
                                   <Eye className="h-4 w-4" />
                                 </Button>
@@ -553,6 +556,7 @@ export default function PatientManagementPage() {
                               size="sm"
                               onClick={() => handleSoftDelete(patient.id!)}
                               className="text-yellow-600 hover:text-yellow-700"
+                              title="Archive Patient"
                             >
                               <Archive className="h-4 w-4" />
                             </Button>
@@ -563,6 +567,7 @@ export default function PatientManagementPage() {
                                   variant="outline"
                                   size="sm"
                                   className="text-red-600 hover:text-red-700 bg-transparent"
+                                  title="Delete Patient Permanently"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
