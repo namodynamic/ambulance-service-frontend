@@ -212,11 +212,19 @@ export default function AdminDashboard() {
     id: a.id,
     licensePlate: a.licensePlate || `AMB-${a.id}`,
     driverName: a.driverName || "",
-    location: a.currentLocation || "",
+    currentLocation: a.currentLocation || "",
     status: a.availability,
     createdAt: a.createdAt,
     updatedAt: a.updatedAt,
   }));
+
+  const activeRequests = useMemo(
+    () =>
+      allRequests.filter(
+        (req) => !["COMPLETED", "CANCELLED"].includes(req.status)
+      ),
+    [allRequests]
+  );
 
   const handleDispatchAmbulance = async (requestId: number) => {
     try {
@@ -633,7 +641,7 @@ export default function AdminDashboard() {
         <div className="mb-10">
           <MapView
             ambulances={mappedAmbulances}
-            requests={pendingRequests}
+            requests={activeRequests}
             selectedRequest={selectedRequest}
             onRequestClick={setSelectedRequest}
           />
@@ -992,7 +1000,7 @@ export default function AdminDashboard() {
                               {ambulance.licensePlate}
                             </h3>
                             <p className="text-sm text-muted-foreground">
-                              Location: {ambulance.location}
+                              Location: {ambulance.currentLocation}
                             </p>
                             {ambulance.driverName && (
                               <p className="text-sm text-muted-foreground">
@@ -1064,11 +1072,11 @@ export default function AdminDashboard() {
                                     </Label>
                                     <Input
                                       id="editLocation"
-                                      value={editingAmbulance.location}
+                                      value={editingAmbulance.currentLocation}
                                       onChange={(e) =>
                                         setEditingAmbulance({
                                           ...editingAmbulance,
-                                          location: e.target.value,
+                                          currentLocation: e.target.value,
                                         })
                                       }
                                     />

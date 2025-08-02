@@ -4,35 +4,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Clock, MapPin, Phone, Shield, Users, CheckCircle, Siren } from "lucide-react"
 import { MapView } from "@/components/MapView"
 import Footer from "@/components/Footer"
+import { useEffect, useState } from "react"
+import { ambulanceAPI } from '@/api/ambulanceServiceAPI';
+import type { AmbulanceData } from "@/types"
 
-const mockAmbulances = [
-  {
-    id: 1,
-    licensePlate: "AMB-001",
-    location: "Downtown Medical Center",
-    status: "AVAILABLE" as const,
-  },
-  {
-    id: 2,
-    licensePlate: "AMB-002",
-    location: "City Hospital",
-    status: "ON_DUTY" as const,
-  },
-  {
-    id: 3,
-    licensePlate: "AMB-003",
-    location: "Emergency Station North",
-    status: "AVAILABLE" as const,
-  },
-  {
-    id: 4,
-    licensePlate: "AMB-004",
-    location: "Central Dispatch",
-    status: "MAINTENANCE" as const,
-  },
-]
 
 export default function LandingPage() {
+const [ambulances, setAmbulances] = useState<AmbulanceData[]>([]);
+
+  useEffect(() => {
+    try {
+      const fetchAmbulances = async () => {
+        const response = await ambulanceAPI.getAll();
+        setAmbulances(response);
+      };
+      fetchAmbulances();
+    } catch (error) {
+      console.error("Error fetching ambulances:", error);
+    }
+  }, []);
+
+   const mappedAmbulances = ambulances.map((a) => ({
+    id: a.id,
+    licensePlate: a.licensePlate || `AMB-${a.id}`,
+    driverName: a.driverName || "",
+    currentLocation: a.currentLocation || "",
+    status: a.availability,
+    createdAt: a.createdAt,
+    updatedAt: a.updatedAt,
+  }));
+
   return (
     <div className="min-h-screen">
       <section className="relative py-20 lg:py-32 bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20">
@@ -82,7 +83,7 @@ export default function LandingPage() {
 
           <div className="max-w-6xl mx-auto">
             <MapView
-              ambulances={mockAmbulances}
+              ambulances={mappedAmbulances}
               requests={[]}
               className="border-2 border-gray-200 dark:border-gray-700 shadow-lg"
             />
@@ -90,7 +91,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-20 bg-background">
+      <section className="py-16 bg-background">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose RapidCare?</h2>

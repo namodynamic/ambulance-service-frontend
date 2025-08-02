@@ -61,6 +61,7 @@ export interface AmbulanceData {
   availability?: AmbulanceStatus;
   createdAt?: string;
   updatedAt?: string;
+  version?: number
 }
 
 export interface Patient {
